@@ -1,0 +1,266 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Thesaurum API",
+        "version": "1.0.0",
+        "description": "API for managing greetings in different languages"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Development server"
+        }
+    ],
+    "components": {
+        "schemas": {},
+        "parameters": {}
+    },
+    "paths": {
+        "/greetings": {
+            "get": {
+                "summary": "Get all greetings",
+                "tags": [
+                    "Greetings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of all greetings",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "number"
+                                            },
+                                            "language": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "de",
+                                                    "it",
+                                                    "pt",
+                                                    "ru",
+                                                    "zh",
+                                                    "ja",
+                                                    "ko"
+                                                ]
+                                            },
+                                            "greeting": {
+                                                "type": "string"
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date"
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "language",
+                                            "greeting",
+                                            "createdAt"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new greeting",
+                "tags": [
+                    "Greetings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "language": {
+                                        "type": "string",
+                                        "enum": [
+                                            "en",
+                                            "es",
+                                            "fr",
+                                            "de",
+                                            "it",
+                                            "pt",
+                                            "ru",
+                                            "zh",
+                                            "ja",
+                                            "ko"
+                                        ]
+                                    },
+                                    "greeting": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "language",
+                                    "greeting"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created greeting",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "number"
+                                        },
+                                        "language": {
+                                            "type": "string",
+                                            "enum": [
+                                                "en",
+                                                "es",
+                                                "fr",
+                                                "de",
+                                                "it",
+                                                "pt",
+                                                "ru",
+                                                "zh",
+                                                "ja",
+                                                "ko"
+                                            ]
+                                        },
+                                        "greeting": {
+                                            "type": "string"
+                                        },
+                                        "createdAt": {
+                                            "type": "string",
+                                            "format": "date"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "language",
+                                        "greeting",
+                                        "createdAt"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/greetings/{language}": {
+            "get": {
+                "summary": "Get greetings by language",
+                "tags": [
+                    "Greetings"
+                ],
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "en",
+                                "es",
+                                "fr",
+                                "de",
+                                "it",
+                                "pt",
+                                "ru",
+                                "zh",
+                                "ja",
+                                "ko"
+                            ]
+                        },
+                        "required": true,
+                        "name": "language",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of greetings in the specified language",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "number"
+                                            },
+                                            "language": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "en",
+                                                    "es",
+                                                    "fr",
+                                                    "de",
+                                                    "it",
+                                                    "pt",
+                                                    "ru",
+                                                    "zh",
+                                                    "ja",
+                                                    "ko"
+                                                ]
+                                            },
+                                            "greeting": {
+                                                "type": "string"
+                                            },
+                                            "createdAt": {
+                                                "type": "string",
+                                                "format": "date"
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "language",
+                                            "greeting",
+                                            "createdAt"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/greetings/{id}": {
+            "delete": {
+                "summary": "Delete a greeting by ID",
+                "tags": [
+                    "Greetings"
+                ],
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "exclusiveMinimum": true
+                        },
+                        "required": true,
+                        "name": "id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Greeting deleted successfully"
+                    },
+                    "404": {
+                        "description": "Greeting not found"
+                    }
+                }
+            }
+        }
+    }
+}
