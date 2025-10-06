@@ -10,8 +10,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types", "./zapatos"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "zapatos/**/*"],
   "exclude": ["node_modules", "dist"]
 }

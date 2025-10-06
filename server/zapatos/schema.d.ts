@@ -18,186 +18,9 @@ declare module 'zapatos/schema' {
   /* === schema: public === */
 
   /* --- enums --- */
-
-  export type language_enum = 'de' | 'en' | 'es' | 'fr' | 'it' | 'ja' | 'ko' | 'pt' | 'ru' | 'zh';
-  export namespace every {
-    export type language_enum = ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'pt', 'ru', 'zh'];
-  }
+  /* (none) */
 
   /* --- tables --- */
-
-  /**
-   * **greetings**
-   * - Table in database
-   */
-  export namespace greetings {
-    export type Table = 'greetings';
-    export interface Selectable {
-      /**
-      * **greetings.created_at**
-      * - `timestamp` in database
-      * - `NOT NULL`, default: `now()`
-      */
-      created_at: Date;
-      /**
-      * **greetings.description**
-      * - `text` in database
-      * - Nullable, no default
-      */
-      description: string | null;
-      /**
-      * **greetings.greeting**
-      * - `text` in database
-      * - `NOT NULL`, no default
-      */
-      greeting: string;
-      /**
-      * **greetings.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('greetings_id_seq'::regclass)`
-      */
-      id: number;
-      /**
-      * **greetings.language**
-      * - `language_enum` in database
-      * - `NOT NULL`, no default
-      */
-      language: language_enum;
-    }
-    export interface JSONSelectable {
-      /**
-      * **greetings.created_at**
-      * - `timestamp` in database
-      * - `NOT NULL`, default: `now()`
-      */
-      created_at: db.TimestampString;
-      /**
-      * **greetings.description**
-      * - `text` in database
-      * - Nullable, no default
-      */
-      description: string | null;
-      /**
-      * **greetings.greeting**
-      * - `text` in database
-      * - `NOT NULL`, no default
-      */
-      greeting: string;
-      /**
-      * **greetings.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('greetings_id_seq'::regclass)`
-      */
-      id: number;
-      /**
-      * **greetings.language**
-      * - `language_enum` in database
-      * - `NOT NULL`, no default
-      */
-      language: language_enum;
-    }
-    export interface Whereable {
-      /**
-      * **greetings.created_at**
-      * - `timestamp` in database
-      * - `NOT NULL`, default: `now()`
-      */
-      created_at?: (db.TimestampString | Date) | db.Parameter<(db.TimestampString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampString | Date) | db.Parameter<(db.TimestampString | Date)> | db.SQLFragment | db.ParentColumn>;
-      /**
-      * **greetings.description**
-      * - `text` in database
-      * - Nullable, no default
-      */
-      description?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
-      /**
-      * **greetings.greeting**
-      * - `text` in database
-      * - `NOT NULL`, no default
-      */
-      greeting?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
-      /**
-      * **greetings.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('greetings_id_seq'::regclass)`
-      */
-      id?: number | db.Parameter<number> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, number | db.Parameter<number> | db.SQLFragment | db.ParentColumn>;
-      /**
-      * **greetings.language**
-      * - `language_enum` in database
-      * - `NOT NULL`, no default
-      */
-      language?: language_enum | db.Parameter<language_enum> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, language_enum | db.Parameter<language_enum> | db.SQLFragment | db.ParentColumn>;
-    }
-    export interface Insertable {
-      /**
-      * **greetings.created_at**
-      * - `timestamp` in database
-      * - `NOT NULL`, default: `now()`
-      */
-      created_at?: (db.TimestampString | Date) | db.Parameter<(db.TimestampString | Date)> | db.DefaultType | db.SQLFragment;
-      /**
-      * **greetings.description**
-      * - `text` in database
-      * - Nullable, no default
-      */
-      description?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
-      /**
-      * **greetings.greeting**
-      * - `text` in database
-      * - `NOT NULL`, no default
-      */
-      greeting: string | db.Parameter<string> | db.SQLFragment;
-      /**
-      * **greetings.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('greetings_id_seq'::regclass)`
-      */
-      id?: number | db.Parameter<number> | db.DefaultType | db.SQLFragment;
-      /**
-      * **greetings.language**
-      * - `language_enum` in database
-      * - `NOT NULL`, no default
-      */
-      language: language_enum | db.Parameter<language_enum> | db.SQLFragment;
-    }
-    export interface Updatable {
-      /**
-      * **greetings.created_at**
-      * - `timestamp` in database
-      * - `NOT NULL`, default: `now()`
-      */
-      created_at?: (db.TimestampString | Date) | db.Parameter<(db.TimestampString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampString | Date) | db.Parameter<(db.TimestampString | Date)> | db.DefaultType | db.SQLFragment>;
-      /**
-      * **greetings.description**
-      * - `text` in database
-      * - Nullable, no default
-      */
-      description?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
-      /**
-      * **greetings.greeting**
-      * - `text` in database
-      * - `NOT NULL`, no default
-      */
-      greeting?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
-      /**
-      * **greetings.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('greetings_id_seq'::regclass)`
-      */
-      id?: number | db.Parameter<number> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, number | db.Parameter<number> | db.DefaultType | db.SQLFragment>;
-      /**
-      * **greetings.language**
-      * - `language_enum` in database
-      * - `NOT NULL`, no default
-      */
-      language?: language_enum | db.Parameter<language_enum> | db.SQLFragment | db.SQLFragment<any, language_enum | db.Parameter<language_enum> | db.SQLFragment>;
-    }
-    export type UniqueIndex = 'greetings_pkey';
-    export type Column = keyof Selectable;
-    export type OnlyCols<T extends readonly Column[]> = Pick<Selectable, T[number]>;
-    export type SQLExpression = Table | db.ColumnNames<Updatable | (keyof Updatable)[]> | db.ColumnValues<Updatable> | Whereable | Column | db.ParentColumn | db.GenericSQLExpression;
-    export type SQL = SQLExpression | SQLExpression[];
-  }
 
   /**
    * **pgmigrations**
@@ -313,82 +136,375 @@ declare module 'zapatos/schema' {
   }
 
   /**
-   * **test**
+   * **transactions**
    * - Table in database
    */
-  export namespace test {
-    export type Table = 'test';
+  export namespace transactions {
+    export type Table = 'transactions';
     export interface Selectable {
       /**
-      * **test.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('test_id_seq'::regclass)`
-      */
-      id: number;
-      /**
-      * **test.name**
-      * - `text` in database
+      * **transactions.amount**
+      * - `numeric` in database
       * - `NOT NULL`, no default
       */
-      name: string;
+      amount: db.NumericString;
+      /**
+      * **transactions.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at: Date;
+      /**
+      * **transactions.destination_user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      destination_user_id: string;
+      /**
+      * **transactions.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id: string;
+      /**
+      * **transactions.idempotency_key**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      idempotency_key: string;
+      /**
+      * **transactions.source_user_id**
+      * - `uuid` in database
+      * - Nullable, no default
+      */
+      source_user_id: string | null;
     }
     export interface JSONSelectable {
       /**
-      * **test.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('test_id_seq'::regclass)`
-      */
-      id: number;
-      /**
-      * **test.name**
-      * - `text` in database
+      * **transactions.amount**
+      * - `numeric` in database
       * - `NOT NULL`, no default
       */
-      name: string;
+      amount: number;
+      /**
+      * **transactions.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at: db.TimestampTzString;
+      /**
+      * **transactions.destination_user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      destination_user_id: string;
+      /**
+      * **transactions.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id: string;
+      /**
+      * **transactions.idempotency_key**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      idempotency_key: string;
+      /**
+      * **transactions.source_user_id**
+      * - `uuid` in database
+      * - Nullable, no default
+      */
+      source_user_id: string | null;
     }
     export interface Whereable {
       /**
-      * **test.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('test_id_seq'::regclass)`
-      */
-      id?: number | db.Parameter<number> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, number | db.Parameter<number> | db.SQLFragment | db.ParentColumn>;
-      /**
-      * **test.name**
-      * - `text` in database
+      * **transactions.amount**
+      * - `numeric` in database
       * - `NOT NULL`, no default
       */
-      name?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      amount?: (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **transactions.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **transactions.destination_user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      destination_user_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **transactions.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **transactions.idempotency_key**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      idempotency_key?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **transactions.source_user_id**
+      * - `uuid` in database
+      * - Nullable, no default
+      */
+      source_user_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
     }
     export interface Insertable {
       /**
-      * **test.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('test_id_seq'::regclass)`
-      */
-      id?: number | db.Parameter<number> | db.DefaultType | db.SQLFragment;
-      /**
-      * **test.name**
-      * - `text` in database
+      * **transactions.amount**
+      * - `numeric` in database
       * - `NOT NULL`, no default
       */
-      name: string | db.Parameter<string> | db.SQLFragment;
+      amount: (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment;
+      /**
+      * **transactions.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment;
+      /**
+      * **transactions.destination_user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      destination_user_id: string | db.Parameter<string> | db.SQLFragment;
+      /**
+      * **transactions.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.DefaultType | db.SQLFragment;
+      /**
+      * **transactions.idempotency_key**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      idempotency_key: string | db.Parameter<string> | db.SQLFragment;
+      /**
+      * **transactions.source_user_id**
+      * - `uuid` in database
+      * - Nullable, no default
+      */
+      source_user_id?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
     }
     export interface Updatable {
       /**
-      * **test.id**
-      * - `int4` in database
-      * - `NOT NULL`, default: `nextval('test_id_seq'::regclass)`
+      * **transactions.amount**
+      * - `numeric` in database
+      * - `NOT NULL`, no default
       */
-      id?: number | db.Parameter<number> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, number | db.Parameter<number> | db.DefaultType | db.SQLFragment>;
+      amount?: (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment | db.SQLFragment<any, (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment>;
       /**
-      * **test.name**
+      * **transactions.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **transactions.destination_user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      destination_user_id?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+      /**
+      * **transactions.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **transactions.idempotency_key**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      idempotency_key?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+      /**
+      * **transactions.source_user_id**
+      * - `uuid` in database
+      * - Nullable, no default
+      */
+      source_user_id?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+    }
+    export type UniqueIndex = 'transactions_idempotency_key_key' | 'transactions_pkey';
+    export type Column = keyof Selectable;
+    export type OnlyCols<T extends readonly Column[]> = Pick<Selectable, T[number]>;
+    export type SQLExpression = Table | db.ColumnNames<Updatable | (keyof Updatable)[]> | db.ColumnValues<Updatable> | Whereable | Column | db.ParentColumn | db.GenericSQLExpression;
+    export type SQL = SQLExpression | SQLExpression[];
+  }
+
+  /**
+   * **users**
+   * - Table in database
+   */
+  export namespace users {
+    export type Table = 'users';
+    export interface Selectable {
+      /**
+      * **users.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at: Date;
+      /**
+      * **users.email**
       * - `text` in database
       * - `NOT NULL`, no default
       */
-      name?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+      email: string;
+      /**
+      * **users.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id: string;
+      /**
+      * **users.password_hash**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      password_hash: string;
+      /**
+      * **users.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at: Date;
     }
-    export type UniqueIndex = 'test_pkey';
+    export interface JSONSelectable {
+      /**
+      * **users.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at: db.TimestampTzString;
+      /**
+      * **users.email**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      email: string;
+      /**
+      * **users.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id: string;
+      /**
+      * **users.password_hash**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      password_hash: string;
+      /**
+      * **users.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at: db.TimestampTzString;
+    }
+    export interface Whereable {
+      /**
+      * **users.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **users.email**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      email?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **users.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **users.password_hash**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      password_hash?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **users.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn>;
+    }
+    export interface Insertable {
+      /**
+      * **users.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment;
+      /**
+      * **users.email**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      email: string | db.Parameter<string> | db.SQLFragment;
+      /**
+      * **users.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.DefaultType | db.SQLFragment;
+      /**
+      * **users.password_hash**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      password_hash: string | db.Parameter<string> | db.SQLFragment;
+      /**
+      * **users.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment;
+    }
+    export interface Updatable {
+      /**
+      * **users.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **users.email**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      email?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+      /**
+      * **users.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **users.password_hash**
+      * - `text` in database
+      * - `NOT NULL`, no default
+      */
+      password_hash?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+      /**
+      * **users.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
+    }
+    export type UniqueIndex = 'users_email_key' | 'users_pkey';
     export type Column = keyof Selectable;
     export type OnlyCols<T extends readonly Column[]> = Pick<Selectable, T[number]>;
     export type SQLExpression = Table | db.ColumnNames<Updatable | (keyof Updatable)[]> | db.ColumnValues<Updatable> | Whereable | Column | db.ParentColumn | db.GenericSQLExpression;
@@ -398,20 +514,20 @@ declare module 'zapatos/schema' {
   /* --- aggregate types --- */
 
   export namespace public {  
-    export type Table = greetings.Table | pgmigrations.Table | test.Table;
-    export type Selectable = greetings.Selectable | pgmigrations.Selectable | test.Selectable;
-    export type JSONSelectable = greetings.JSONSelectable | pgmigrations.JSONSelectable | test.JSONSelectable;
-    export type Whereable = greetings.Whereable | pgmigrations.Whereable | test.Whereable;
-    export type Insertable = greetings.Insertable | pgmigrations.Insertable | test.Insertable;
-    export type Updatable = greetings.Updatable | pgmigrations.Updatable | test.Updatable;
-    export type UniqueIndex = greetings.UniqueIndex | pgmigrations.UniqueIndex | test.UniqueIndex;
-    export type Column = greetings.Column | pgmigrations.Column | test.Column;
+    export type Table = pgmigrations.Table | transactions.Table | users.Table;
+    export type Selectable = pgmigrations.Selectable | transactions.Selectable | users.Selectable;
+    export type JSONSelectable = pgmigrations.JSONSelectable | transactions.JSONSelectable | users.JSONSelectable;
+    export type Whereable = pgmigrations.Whereable | transactions.Whereable | users.Whereable;
+    export type Insertable = pgmigrations.Insertable | transactions.Insertable | users.Insertable;
+    export type Updatable = pgmigrations.Updatable | transactions.Updatable | users.Updatable;
+    export type UniqueIndex = pgmigrations.UniqueIndex | transactions.UniqueIndex | users.UniqueIndex;
+    export type Column = pgmigrations.Column | transactions.Column | users.Column;
   
-    export type AllBaseTables = [greetings.Table, pgmigrations.Table, test.Table];
+    export type AllBaseTables = [pgmigrations.Table, transactions.Table, users.Table];
     export type AllForeignTables = [];
     export type AllViews = [];
     export type AllMaterializedViews = [];
-    export type AllTablesAndViews = [greetings.Table, pgmigrations.Table, test.Table];
+    export type AllTablesAndViews = [pgmigrations.Table, transactions.Table, users.Table];
   }
 
 
@@ -439,51 +555,51 @@ declare module 'zapatos/schema' {
   /* === lookups === */
 
   export type SelectableForTable<T extends Table> = {
-    "greetings": greetings.Selectable;
     "pgmigrations": pgmigrations.Selectable;
-    "test": test.Selectable;
+    "transactions": transactions.Selectable;
+    "users": users.Selectable;
   }[T];
 
   export type JSONSelectableForTable<T extends Table> = {
-    "greetings": greetings.JSONSelectable;
     "pgmigrations": pgmigrations.JSONSelectable;
-    "test": test.JSONSelectable;
+    "transactions": transactions.JSONSelectable;
+    "users": users.JSONSelectable;
   }[T];
 
   export type WhereableForTable<T extends Table> = {
-    "greetings": greetings.Whereable;
     "pgmigrations": pgmigrations.Whereable;
-    "test": test.Whereable;
+    "transactions": transactions.Whereable;
+    "users": users.Whereable;
   }[T];
 
   export type InsertableForTable<T extends Table> = {
-    "greetings": greetings.Insertable;
     "pgmigrations": pgmigrations.Insertable;
-    "test": test.Insertable;
+    "transactions": transactions.Insertable;
+    "users": users.Insertable;
   }[T];
 
   export type UpdatableForTable<T extends Table> = {
-    "greetings": greetings.Updatable;
     "pgmigrations": pgmigrations.Updatable;
-    "test": test.Updatable;
+    "transactions": transactions.Updatable;
+    "users": users.Updatable;
   }[T];
 
   export type UniqueIndexForTable<T extends Table> = {
-    "greetings": greetings.UniqueIndex;
     "pgmigrations": pgmigrations.UniqueIndex;
-    "test": test.UniqueIndex;
+    "transactions": transactions.UniqueIndex;
+    "users": users.UniqueIndex;
   }[T];
 
   export type ColumnForTable<T extends Table> = {
-    "greetings": greetings.Column;
     "pgmigrations": pgmigrations.Column;
-    "test": test.Column;
+    "transactions": transactions.Column;
+    "users": users.Column;
   }[T];
 
   export type SQLForTable<T extends Table> = {
-    "greetings": greetings.SQL;
     "pgmigrations": pgmigrations.SQL;
-    "test": test.SQL;
+    "transactions": transactions.SQL;
+    "users": users.SQL;
   }[T];
 
 }

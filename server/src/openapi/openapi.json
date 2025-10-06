@@ -3,7 +3,7 @@
     "info": {
         "title": "Thesaurum API",
         "version": "1.0.0",
-        "description": "API for managing greetings in different languages"
+        "description": "API for managing financial transactions"
     },
     "servers": [
         {
@@ -12,162 +12,221 @@
         }
     ],
     "paths": {
-        "/greetings": {
-            "get": {
-                "summary": "Get all greetings",
-                "tags": [
-                    "Greetings"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of all greetings",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Greeting"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
+        "/users": {
             "post": {
-                "summary": "Create a new greeting",
+                "summary": "Create a new user",
+                "description": "Register a new user account",
                 "tags": [
-                    "Greetings"
+                    "Users"
                 ],
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/CreateGreeting"
+                                "$ref": "#/components/schemas/CreateUser"
                             }
                         }
                     }
                 },
                 "responses": {
                     "201": {
-                        "description": "Created greeting",
+                        "description": "User created successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Greeting"
+                                    "$ref": "#/components/schemas/User"
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "409": {
+                        "description": "Email already exists"
+                    },
+                    "500": {
+                        "description": "Internal server error"
                     }
                 }
             }
         },
-        "/greetings/{language}": {
-            "get": {
-                "summary": "Get greetings by language",
+        "/transactions": {
+            "post": {
+                "summary": "Create a new transaction",
+                "description": "Execute a financial transfer between two users with JIT balance verification",
                 "tags": [
-                    "Greetings"
+                    "Transactions"
                 ],
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "language",
-                        "schema": {
-                            "description": "Language code",
-                            "example": "en",
-                            "type": "string",
-                            "enum": [
-                                "de",
-                                "en",
-                                "es",
-                                "fr",
-                                "it",
-                                "ja",
-                                "ko",
-                                "pt",
-                                "ru",
-                                "zh"
-                            ]
-                        },
-                        "required": true,
-                        "description": "Language code"
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateTransaction"
+                            }
+                        }
                     }
-                ],
+                },
                 "responses": {
-                    "200": {
-                        "description": "List of greetings in the specified language",
+                    "201": {
+                        "description": "Transaction created successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Greeting"
-                                    }
+                                    "$ref": "#/components/schemas/Transaction"
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error or insufficient funds)"
+                    },
+                    "500": {
+                        "description": "Internal server error"
                     }
                 }
             }
         },
-        "/greetings/{id}": {
-            "delete": {
-                "summary": "Delete a greeting by ID",
+        "/users/{id}/balance": {
+            "get": {
+                "summary": "Get user balance",
+                "description": "Get current balance or historical balance at a specific date",
                 "tags": [
-                    "Greetings"
+                    "Transactions"
                 ],
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
                         "schema": {
-                            "description": "Greeting ID",
-                            "example": 1,
-                            "type": "integer",
-                            "exclusiveMinimum": 0,
-                            "maximum": 9007199254740991
+                            "description": "User UUID",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "required": true,
-                        "description": "Greeting ID"
+                        "description": "User UUID"
+                    },
+                    {
+                        "in": "query",
+                        "name": "date",
+                        "schema": {
+                            "description": "Optional ISO 8601 datetime to get historical balance",
+                            "example": "2025-10-06T12:00:00Z",
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "description": "Optional ISO 8601 datetime to get historical balance"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Deleted greeting",
+                        "description": "User balance",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Greeting"
+                                    "$ref": "#/components/schemas/UserBalance"
                                 }
                             }
                         }
                     },
-                    "404": {
-                        "description": "Greeting not found"
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "500": {
+                        "description": "Internal server error"
                     }
                 }
             }
         },
-        "/testEndpoint": {
+        "/users/{id}/transactions": {
             "get": {
-                "summary": "Get all test rows",
-                "description": "Retrieves a list of all rows from the test table.",
+                "summary": "Get user transaction history",
+                "description": "Get all transactions where user is source or destination",
                 "tags": [
-                    "Test"
+                    "Transactions"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "description": "User UUID",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "required": true,
+                        "description": "User UUID"
+                    }
                 ],
                 "responses": {
                     "200": {
-                        "description": "A list of test rows",
+                        "description": "List of transactions",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/TestEndpoint"
+                                        "$ref": "#/components/schemas/Transaction"
                                     }
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/users/{id}/deposit": {
+            "post": {
+                "summary": "Deposit money into user account",
+                "description": "Inject money into the system by depositing funds into a user account",
+                "tags": [
+                    "Transactions"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "description": "User UUID",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "required": true,
+                        "description": "User UUID"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateDeposit"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Deposit successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Transaction"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
                     },
                     "500": {
                         "description": "Internal server error"
@@ -208,126 +267,174 @@
     },
     "components": {
         "schemas": {
-            "CreateGreeting": {
+            "CreateUser": {
                 "type": "object",
                 "properties": {
-                    "language": {
-                        "description": "Language code",
-                        "example": "en",
+                    "email": {
+                        "description": "User email address",
                         "type": "string",
-                        "enum": [
-                            "de",
-                            "en",
-                            "es",
-                            "fr",
-                            "it",
-                            "ja",
-                            "ko",
-                            "pt",
-                            "ru",
-                            "zh"
-                        ]
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                     },
-                    "greeting": {
-                        "description": "The greeting text",
-                        "example": "Hello",
-                        "type": "string"
-                    },
-                    "description": {
-                        "description": "Optional description of the greeting",
-                        "example": "A friendly greeting",
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                    "password": {
+                        "description": "User password (min 8 characters)",
+                        "type": "string",
+                        "minLength": 8
                     }
                 },
                 "required": [
-                    "language",
-                    "greeting"
+                    "email",
+                    "password"
                 ]
             },
-            "Greeting": {
+            "CreateTransaction": {
+                "type": "object",
+                "properties": {
+                    "idempotency_key": {
+                        "description": "Unique key for idempotent requests",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "source_user_id": {
+                        "description": "UUID of the user sending funds",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "destination_user_id": {
+                        "description": "UUID of the user receiving funds",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "amount": {
+                        "description": "Transfer amount in cents",
+                        "example": 10050,
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                    }
+                },
+                "required": [
+                    "idempotency_key",
+                    "source_user_id",
+                    "destination_user_id",
+                    "amount"
+                ]
+            },
+            "CreateDeposit": {
+                "type": "object",
+                "properties": {
+                    "idempotency_key": {
+                        "description": "Unique key for idempotent requests",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "amount": {
+                        "description": "Deposit amount in cents",
+                        "example": 10000,
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                    }
+                },
+                "required": [
+                    "idempotency_key",
+                    "amount"
+                ]
+            },
+            "User": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "description": "Unique identifier for the greeting",
-                        "example": 1,
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                    },
-                    "language": {
-                        "description": "Language code",
-                        "example": "en",
                         "type": "string",
-                        "enum": [
-                            "de",
-                            "en",
-                            "es",
-                            "fr",
-                            "it",
-                            "ja",
-                            "ko",
-                            "pt",
-                            "ru",
-                            "zh"
-                        ]
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "greeting": {
-                        "description": "The greeting text",
-                        "example": "Hello",
+                    "email": {
                         "type": "string"
                     },
                     "created_at": {
-                        "description": "Creation timestamp",
-                        "example": "2025-10-06T00:00:00.000Z",
                         "type": "string"
                     },
-                    "description": {
-                        "description": "Optional description of the greeting",
-                        "example": "A friendly greeting",
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                    "updated_at": {
+                        "type": "string"
                     }
                 },
                 "required": [
                     "id",
-                    "language",
-                    "greeting",
+                    "email",
+                    "created_at",
+                    "updated_at"
+                ],
+                "additionalProperties": false
+            },
+            "Transaction": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "idempotency_key": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "source_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "destination_user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "amount": {
+                        "type": "number"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "idempotency_key",
+                    "destination_user_id",
+                    "amount",
                     "created_at"
                 ],
                 "additionalProperties": false
             },
-            "TestEndpoint": {
+            "UserBalance": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "description": "Unique identifier for the test row",
-                        "example": 1,
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "balance": {
+                        "description": "Balance in cents",
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
-                    },
-                    "name": {
-                        "description": "The name value",
-                        "example": "Test Name",
-                        "type": "string"
                     }
                 },
                 "required": [
-                    "id",
-                    "name"
+                    "user_id",
+                    "balance"
                 ],
                 "additionalProperties": false
             }

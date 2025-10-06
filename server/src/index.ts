@@ -3,8 +3,8 @@ import './init';
 
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
-import greetingsRouter from './routes/greetings';
-import testRouter from './routes/testEndpoint';
+import transactionsRouter from './routes/transactions';
+import usersRouter from './routes/users';
 import { openApiSpec } from './openapi';
 
 const app = express();
@@ -17,8 +17,8 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // Routes
-app.use('/greetings', greetingsRouter);
-app.use('/testEndpoint', testRouter);
+app.use('/', transactionsRouter);
+app.use('/', usersRouter);
 
 // OpenAPI spec endpoint
 app.get('/openapi.json', (req, res) => {

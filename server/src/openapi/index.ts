@@ -1,14 +1,21 @@
 import { createDocument } from 'zod-openapi';
 import { z } from 'zod';
-import { GreetingSchema, CreateGreetingSchema, LanguageEnum } from '../schemas/greetings';
-import { TestEndpointSchema } from '../schemas/testEndpoint';
+import {
+  CreateTransactionSchema,
+  TransactionSchema,
+  CreateDepositSchema,
+  UserBalanceSchema,
+  BalanceQuerySchema,
+  UserIdPathSchema,
+} from '../schemas/transactions';
+import { CreateUserSchema, UserSchema } from '../schemas/users';
 
 export const openApiSpec = createDocument({
   openapi: '3.1.0',
   info: {
     title: 'Thesaurum API',
     version: '1.0.0',
-    description: 'API for managing greetings in different languages',
+    description: 'API for managing financial transactions',
   },
   servers: [
     {
@@ -17,104 +24,148 @@ export const openApiSpec = createDocument({
     },
   ],
   paths: {
-    '/greetings': {
-      get: {
-        summary: 'Get all greetings',
-        tags: ['Greetings'],
-        responses: {
-          '200': {
-            description: 'List of all greetings',
-            content: {
-              'application/json': {
-                schema: z.array(GreetingSchema),
-              },
-            },
-          },
-        },
-      },
+    '/users': {
       post: {
-        summary: 'Create a new greeting',
-        tags: ['Greetings'],
+        summary: 'Create a new user',
+        description: 'Register a new user account',
+        tags: ['Users'],
         requestBody: {
           content: {
             'application/json': {
-              schema: CreateGreetingSchema,
+              schema: CreateUserSchema,
             },
           },
         },
         responses: {
           '201': {
-            description: 'Created greeting',
+            description: 'User created successfully',
             content: {
               'application/json': {
-                schema: GreetingSchema,
+                schema: UserSchema,
               },
             },
+          },
+          '400': {
+            description: 'Validation error',
+          },
+          '409': {
+            description: 'Email already exists',
+          },
+          '500': {
+            description: 'Internal server error',
           },
         },
       },
     },
-    '/greetings/{language}': {
+    '/transactions': {
+      post: {
+        summary: 'Create a new transaction',
+        description: 'Execute a financial transfer between two users with JIT balance verification',
+        tags: ['Transactions'],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: CreateTransactionSchema,
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Transaction created successfully',
+            content: {
+              'application/json': {
+                schema: TransactionSchema,
+              },
+            },
+          },
+          '400': {
+            description: 'Bad request (validation error or insufficient funds)',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/users/{id}/balance': {
       get: {
-        summary: 'Get greetings by language',
-        tags: ['Greetings'],
+        summary: 'Get user balance',
+        description: 'Get current balance or historical balance at a specific date',
+        tags: ['Transactions'],
         requestParams: {
-          path: z.object({
-            language: LanguageEnum,
-          }),
+          path: UserIdPathSchema,
+          query: BalanceQuerySchema,
         },
         responses: {
           '200': {
-            description: 'List of greetings in the specified language',
+            description: 'User balance',
             content: {
               'application/json': {
-                schema: z.array(GreetingSchema),
+                schema: UserBalanceSchema,
               },
             },
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
           },
         },
       },
     },
-    '/greetings/{id}': {
-      delete: {
-        summary: 'Delete a greeting by ID',
-        tags: ['Greetings'],
-        requestParams: {
-          path: z.object({
-            id: z.number().int().positive().meta({
-              description: 'Greeting ID',
-              example: 1,
-            }),
-          }),
-        },
-        responses: {
-          '200': {
-            description: 'Deleted greeting',
-            content: {
-              'application/json': {
-                schema: GreetingSchema,
-              },
-            },
-          },
-          '404': {
-            description: 'Greeting not found',
-          },
-        },
-      },
-    },
-    '/testEndpoint': {
+    '/users/{id}/transactions': {
       get: {
-        summary: 'Get all test rows',
-        description: 'Retrieves a list of all rows from the test table.',
-        tags: ['Test'],
+        summary: 'Get user transaction history',
+        description: 'Get all transactions where user is source or destination',
+        tags: ['Transactions'],
+        requestParams: {
+          path: UserIdPathSchema,
+        },
         responses: {
           '200': {
-            description: 'A list of test rows',
+            description: 'List of transactions',
             content: {
               'application/json': {
-                schema: z.array(TestEndpointSchema),
+                schema: z.array(TransactionSchema),
               },
             },
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/users/{id}/deposit': {
+      post: {
+        summary: 'Deposit money into user account',
+        description: 'Inject money into the system by depositing funds into a user account',
+        tags: ['Transactions'],
+        requestParams: {
+          path: UserIdPathSchema,
+        },
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: CreateDepositSchema,
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Deposit successful',
+            content: {
+              'application/json': {
+                schema: TransactionSchema,
+              },
+            },
+          },
+          '400': {
+            description: 'Bad request (validation error)',
           },
           '500': {
             description: 'Internal server error',
