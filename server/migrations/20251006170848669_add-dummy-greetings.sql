@@ -1,3 +1,4 @@
+-- Insert dummy greetings
 INSERT INTO "greetings" ("language", "greeting") VALUES
 ('en', 'Hello'),
 ('es', 'Hola'),
@@ -8,4 +9,5 @@ INSERT INTO "greetings" ("language", "greeting") VALUES
 ('ru', 'Привет'),
 ('zh', '你好'),
 ('ja', 'こんにちは'),
-('ko', '안녕하세요');
+('ko', '안녕하세요')
+ON CONFLICT (language) DO NOTHING;

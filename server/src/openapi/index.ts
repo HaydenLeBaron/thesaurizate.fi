@@ -1,104 +1,10 @@
-/**
- * This file manually registers paths to the OpenAPI so that the API
- * is displayed in the raw OpenAPI spec and the Swagger UI visualization.
- */
-
+import { createDocument } from 'zod-openapi';
 import { z } from 'zod';
-import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
-import { selectGreetingSchema, createGreetingSchema, languageSchema } from '../schemas/greeting.schema';
+import { GreetingSchema, CreateGreetingSchema, LanguageEnum } from '../schemas/greetings';
+import { TestEndpointSchema } from '../schemas/testEndpoint';
 
-const registry = new OpenAPIRegistry();
-
-// Register paths (don't register schemas separately with v8+)
-registry.registerPath({
-  method: 'get',
-  path: '/greetings',
-  summary: 'Get all greetings',
-  tags: ['Greetings'],
-  responses: {
-    200: {
-      description: 'List of all greetings',
-      content: {
-        'application/json': {
-          schema: z.array(selectGreetingSchema),
-        },
-      },
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'get',
-  path: '/greetings/{language}',
-  summary: 'Get greetings by language',
-  tags: ['Greetings'],
-  request: {
-    params: z.object({
-      language: languageSchema,
-    }),
-  },
-  responses: {
-    200: {
-      description: 'List of greetings in the specified language',
-      content: {
-        'application/json': {
-          schema: z.array(selectGreetingSchema),
-        },
-      },
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'post',
-  path: '/greetings',
-  summary: 'Create a new greeting',
-  tags: ['Greetings'],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: createGreetingSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    201: {
-      description: 'Created greeting',
-      content: {
-        'application/json': {
-          schema: selectGreetingSchema,
-        },
-      },
-    },
-  },
-});
-
-registry.registerPath({
-  method: 'delete',
-  path: '/greetings/{id}',
-  summary: 'Delete a greeting by ID',
-  tags: ['Greetings'],
-  request: {
-    params: z.object({
-      id: z.coerce.number().int().positive(),
-    }),
-  },
-  responses: {
-    204: {
-      description: 'Greeting deleted successfully',
-    },
-    404: {
-      description: 'Greeting not found',
-    },
-  },
-});
-
-const generator = new OpenApiGeneratorV3(registry.definitions);
-
-export const openApiSpec = generator.generateDocument({
-  openapi: '3.0.0',
+export const openApiSpec = createDocument({
+  openapi: '3.1.0',
   info: {
     title: 'Thesaurum API',
     version: '1.0.0',
@@ -110,4 +16,129 @@ export const openApiSpec = generator.generateDocument({
       description: 'Development server',
     },
   ],
+  paths: {
+    '/greetings': {
+      get: {
+        summary: 'Get all greetings',
+        tags: ['Greetings'],
+        responses: {
+          '200': {
+            description: 'List of all greetings',
+            content: {
+              'application/json': {
+                schema: z.array(GreetingSchema),
+              },
+            },
+          },
+        },
+      },
+      post: {
+        summary: 'Create a new greeting',
+        tags: ['Greetings'],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: CreateGreetingSchema,
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Created greeting',
+            content: {
+              'application/json': {
+                schema: GreetingSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/greetings/{language}': {
+      get: {
+        summary: 'Get greetings by language',
+        tags: ['Greetings'],
+        requestParams: {
+          path: z.object({
+            language: LanguageEnum,
+          }),
+        },
+        responses: {
+          '200': {
+            description: 'List of greetings in the specified language',
+            content: {
+              'application/json': {
+                schema: z.array(GreetingSchema),
+              },
+            },
+          },
+        },
+      },
+    },
+    '/greetings/{id}': {
+      delete: {
+        summary: 'Delete a greeting by ID',
+        tags: ['Greetings'],
+        requestParams: {
+          path: z.object({
+            id: z.number().int().positive().meta({
+              description: 'Greeting ID',
+              example: 1,
+            }),
+          }),
+        },
+        responses: {
+          '200': {
+            description: 'Deleted greeting',
+            content: {
+              'application/json': {
+                schema: GreetingSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Greeting not found',
+          },
+        },
+      },
+    },
+    '/testEndpoint': {
+      get: {
+        summary: 'Get all test rows',
+        description: 'Retrieves a list of all rows from the test table.',
+        tags: ['Test'],
+        responses: {
+          '200': {
+            description: 'A list of test rows',
+            content: {
+              'application/json': {
+                schema: z.array(TestEndpointSchema),
+              },
+            },
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/health': {
+      get: {
+        summary: 'Health check',
+        tags: ['System'],
+        responses: {
+          '200': {
+            description: 'Service is healthy',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  status: z.string().meta({ example: 'ok' }),
+                }),
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 });

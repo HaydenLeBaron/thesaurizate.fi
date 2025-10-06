@@ -1,0 +1,11 @@
+{
+  "database-url-var": "DATABASE_URL",
+  "migrations-dir": "migrations",
+  "migrations-table": "pgmigrations",
+  "dir": "migrations",
+  "check-order": true,
+  "single-transaction": true,
+  "decamelize": true,
+  "migration-file-language": "sql",
+  "migration-filename-format": "utc"
+}

@@ -2,7 +2,7 @@
 
 Express.js TypeScript API with PostgreSQL for managing greetings in different languages.
 
-Built with Drizzle ORM for type-safe database queries and auto-generated Zod schemas.
+Built with Zapatos for type-safe database queries, pgzod for auto-generated Zod schemas, and node-pg-migrate for database migrations.
 
 ## Getting Started
 
@@ -48,8 +48,10 @@ Interactive API documentation with live testing capabilities.
 - `POST /greetings` - Create a new greeting
 - `DELETE /greetings/:id` - Delete a greeting by ID
 - `GET /api-docs` - Swagger UI documentation
-- `GET /openapi.json` - OpenAPI specification (auto-generated from Zod schemas)
+- `GET /openapi.json` - OpenAPI specification (manually defined)
 - `GET /health` - Health check endpoint
+
+**Note**: All responses use snake_case field names (e.g., `created_at`, not `createdAt`).
 
 ### Database Connection (SQLTools)
 
@@ -66,21 +68,38 @@ To connect to the PostgreSQL database using an external tool like the [SQLTools 
 ### Development
 
 **NPM Scripts (from project root):**
-- `npm run install:all` - Install dependencies in root and `server/` directories.
-- `npm run setup` - **DEPRECATED**. Installs dependencies and runs migrations. Use `install:all` and `db:migrate` instead.
+- `npm run install:all` - Install dependencies in root and `server/` directories
 - `npm run install:server` - Install dependencies in server container
-- `npm run db:generate` - Generate migrations from schema changes
-- `npm run db:migrate` - Run pending migrations
-- `npm run db:push` - Push schema changes directly (development only)
-- `npm run db:studio` - Open Drizzle Studio (database GUI)
+- `npm run db:generate` - Generate Zapatos types and pgzod Zod schemas from database
+- `npm run db:migrate` - Run pending SQL migrations
 - `npm run dev` - Start docker-compose services
 - `npm run dev:build` - Rebuild and start services
 - `npm run down` - Stop docker-compose services
+- `npm run setup` - Install server dependencies, generate types, and run migrations
 
 ### Architecture
 
-- **Database Schema**: Defined in `src/db/schema.ts` using Drizzle ORM
-- **Zod Schemas**: Auto-generated from Drizzle schema using `drizzle-zod`
-- **OpenAPI Spec**: Auto-generated from Zod schemas using `@asteasolutions/zod-to-openapi`
+- **Database Migrations**: Managed by `node-pg-migrate` with SQL files in `server/migrations/`
+- **Zapatos Types**: Auto-generated TypeScript types from database schema
+- **Zod Schemas**: Auto-generated from database using `pgzod`
+- **OpenAPI Spec**: Manually defined in `server/src/openapi/index.ts`
 - **Swagger UI**: Interactive API documentation served via `swagger-ui-express`
-- **Single Source of Truth**: Database schema → Migrations → Zod → OpenAPI → Swagger UI
+- **Single Source of Truth**: SQL Migrations → Zapatos Types → pgzod Zod Schemas → API Validation → Manual OpenAPI Spec
+
+For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+### Workflow for Schema Changes
+
+1. Create a new migration: `docker-compose exec server npm run db:migrate:create <migration-name>`
+   - Generates a timestamped SQL file (e.g., `1728233328668_migration-name.sql`)
+2. Edit the generated SQL file in `server/migrations/`
+3. Apply the migration: `npm run db:migrate`
+4. Generate types: `npm run db:generate`
+5. Update your API routes and OpenAPI spec as needed
+
+**Additional Migration Commands:**
+- `npm run db:migrate` - Apply pending migrations
+- `docker-compose exec server npm run db:migrate:down` - Rollback last migration
+- `docker-compose exec postgres psql -U postgres -d thesaurum -c "SELECT name, run_on FROM pgmigrations ORDER BY run_on;"` - View migration status
+
+**Note**: Migrations use timestamp-based filenames for proper ordering and to avoid conflicts.

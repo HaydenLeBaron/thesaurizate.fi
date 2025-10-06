@@ -1,18 +1,16 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import { greetings } from '../db/schema';
-import { createGreetingSchema, languageSchema } from '../schemas/greeting.schema';
-import { eq, desc } from 'drizzle-orm';
+import { pool } from '../db';
+import * as db from 'zapatos/db';
+import { GreetingSchema, CreateGreetingSchema, LanguageEnum } from '../schemas/greetings';
 
 const router = Router();
 
 // GET /greetings - Get all greetings
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const allGreetings = await db
-      .select()
-      .from(greetings)
-      .orderBy(desc(greetings.createdAt));
+    const allGreetings = await db.select('greetings', db.all, {
+      order: { by: 'created_at', direction: 'DESC' }
+    }).run(pool);
 
     res.json(allGreetings);
   } catch (error) {
@@ -27,16 +25,14 @@ router.get('/:language', async (req: Request, res: Response) => {
     const { language } = req.params;
 
     // Validate language
-    const parseResult = languageSchema.safeParse(language);
+    const parseResult = LanguageEnum.safeParse(language);
     if (!parseResult.success) {
       return res.status(400).json({ error: 'Invalid language' });
     }
 
-    const languageGreetings = await db
-      .select()
-      .from(greetings)
-      .where(eq(greetings.language, parseResult.data))
-      .orderBy(desc(greetings.createdAt));
+    const languageGreetings = await db.select('greetings', { language: parseResult.data }, {
+      order: { by: 'created_at', direction: 'DESC' }
+    }).run(pool);
 
     res.json(languageGreetings);
   } catch (error) {
@@ -48,16 +44,13 @@ router.get('/:language', async (req: Request, res: Response) => {
 // POST /greetings - Create a new greeting
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const parseResult = createGreetingSchema.safeParse(req.body);
+    const parseResult = CreateGreetingSchema.safeParse(req.body);
 
     if (!parseResult.success) {
       return res.status(400).json({ error: 'Invalid request body', details: parseResult.error });
     }
 
-    const [newGreeting] = await db
-      .insert(greetings)
-      .values(parseResult.data)
-      .returning();
+    const newGreeting = await db.insert('greetings', parseResult.data).run(pool);
 
     res.status(201).json(newGreeting);
   } catch (error) {
@@ -75,10 +68,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid ID' });
     }
 
-    const result = await db
-      .delete(greetings)
-      .where(eq(greetings.id, id))
-      .returning();
+    const result = await db.deletes('greetings', { id }).run(pool);
 
     if (result.length === 0) {
       return res.status(404).json({ error: 'Greeting not found' });

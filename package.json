@@ -7,10 +7,9 @@
     "install:server": "docker-compose exec server npm install",
     "db:generate": "docker-compose exec server npm run db:generate",
     "db:migrate": "docker-compose exec server npm run db:migrate",
-    "db:push": "docker-compose exec server npm run db:push",
-    "db:studio": "docker-compose exec server npm run db:studio",
+    "db:migrate:generate": "npm run db:migrate && npm run db:generate",
     "openapi:generate": "docker-compose exec server curl -o src/openapi/openapi.json http://localhost:3000/openapi.json",
-    "setup": "npm run install:server && npm run db:generate && npm run db:migrate",
+    "setup": "npm run install:server && npm run db:migrate && npm run db:generate",
     "dev": "docker-compose up",
     "dev:build": "docker-compose up --build",
     "down": "docker-compose down"

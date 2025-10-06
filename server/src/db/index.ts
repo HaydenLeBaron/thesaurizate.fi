@@ -1,8 +1,11 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+import pg from 'pg';
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/thesaurum';
 
-const client = postgres(connectionString);
-export const db = drizzle(client, { schema });
+// Create postgres connection pool
+export const pool = new pg.Pool({ connectionString });
+
+pool.on('error', err => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});

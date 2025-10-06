@@ -1,5 +1,5 @@
 {
-    "openapi": "3.0.0",
+    "openapi": "3.1.0",
     "info": {
         "title": "Thesaurum API",
         "version": "1.0.0",
@@ -11,10 +11,6 @@
             "description": "Development server"
         }
     ],
-    "components": {
-        "schemas": {},
-        "parameters": {}
-    },
     "paths": {
         "/greetings": {
             "get": {
@@ -30,40 +26,7 @@
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "id": {
-                                                "type": "number"
-                                            },
-                                            "language": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "en",
-                                                    "es",
-                                                    "fr",
-                                                    "de",
-                                                    "it",
-                                                    "pt",
-                                                    "ru",
-                                                    "zh",
-                                                    "ja",
-                                                    "ko"
-                                                ]
-                                            },
-                                            "greeting": {
-                                                "type": "string"
-                                            },
-                                            "createdAt": {
-                                                "type": "string",
-                                                "format": "date"
-                                            }
-                                        },
-                                        "required": [
-                                            "id",
-                                            "language",
-                                            "greeting",
-                                            "createdAt"
-                                        ]
+                                        "$ref": "#/components/schemas/Greeting"
                                     }
                                 }
                             }
@@ -80,31 +43,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "language": {
-                                        "type": "string",
-                                        "enum": [
-                                            "en",
-                                            "es",
-                                            "fr",
-                                            "de",
-                                            "it",
-                                            "pt",
-                                            "ru",
-                                            "zh",
-                                            "ja",
-                                            "ko"
-                                        ]
-                                    },
-                                    "greeting": {
-                                        "type": "string"
-                                    }
-                                },
-                                "required": [
-                                    "language",
-                                    "greeting"
-                                ]
+                                "$ref": "#/components/schemas/CreateGreeting"
                             }
                         }
                     }
@@ -115,40 +54,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {
-                                            "type": "number"
-                                        },
-                                        "language": {
-                                            "type": "string",
-                                            "enum": [
-                                                "en",
-                                                "es",
-                                                "fr",
-                                                "de",
-                                                "it",
-                                                "pt",
-                                                "ru",
-                                                "zh",
-                                                "ja",
-                                                "ko"
-                                            ]
-                                        },
-                                        "greeting": {
-                                            "type": "string"
-                                        },
-                                        "createdAt": {
-                                            "type": "string",
-                                            "format": "date"
-                                        }
-                                    },
-                                    "required": [
-                                        "id",
-                                        "language",
-                                        "greeting",
-                                        "createdAt"
-                                    ]
+                                    "$ref": "#/components/schemas/Greeting"
                                 }
                             }
                         }
@@ -164,24 +70,27 @@
                 ],
                 "parameters": [
                     {
+                        "in": "path",
+                        "name": "language",
                         "schema": {
+                            "description": "Language code",
+                            "example": "en",
                             "type": "string",
                             "enum": [
+                                "de",
                                 "en",
                                 "es",
                                 "fr",
-                                "de",
                                 "it",
+                                "ja",
+                                "ko",
                                 "pt",
                                 "ru",
-                                "zh",
-                                "ja",
-                                "ko"
+                                "zh"
                             ]
                         },
                         "required": true,
-                        "name": "language",
-                        "in": "path"
+                        "description": "Language code"
                     }
                 ],
                 "responses": {
@@ -192,40 +101,7 @@
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "id": {
-                                                "type": "number"
-                                            },
-                                            "language": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "en",
-                                                    "es",
-                                                    "fr",
-                                                    "de",
-                                                    "it",
-                                                    "pt",
-                                                    "ru",
-                                                    "zh",
-                                                    "ja",
-                                                    "ko"
-                                                ]
-                                            },
-                                            "greeting": {
-                                                "type": "string"
-                                            },
-                                            "createdAt": {
-                                                "type": "string",
-                                                "format": "date"
-                                            }
-                                        },
-                                        "required": [
-                                            "id",
-                                            "language",
-                                            "greeting",
-                                            "createdAt"
-                                        ]
+                                        "$ref": "#/components/schemas/Greeting"
                                     }
                                 }
                             }
@@ -242,24 +118,218 @@
                 ],
                 "parameters": [
                     {
+                        "in": "path",
+                        "name": "id",
                         "schema": {
+                            "description": "Greeting ID",
+                            "example": 1,
                             "type": "integer",
-                            "minimum": 0,
-                            "exclusiveMinimum": true
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
                         },
                         "required": true,
-                        "name": "id",
-                        "in": "path"
+                        "description": "Greeting ID"
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "Greeting deleted successfully"
+                    "200": {
+                        "description": "Deleted greeting",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Greeting"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Greeting not found"
                     }
                 }
+            }
+        },
+        "/testEndpoint": {
+            "get": {
+                "summary": "Get all test rows",
+                "description": "Retrieves a list of all rows from the test table.",
+                "tags": [
+                    "Test"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A list of test rows",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TestEndpoint"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "summary": "Health check",
+                "tags": [
+                    "System"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Service is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "example": "ok",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "status"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CreateGreeting": {
+                "type": "object",
+                "properties": {
+                    "language": {
+                        "description": "Language code",
+                        "example": "en",
+                        "type": "string",
+                        "enum": [
+                            "de",
+                            "en",
+                            "es",
+                            "fr",
+                            "it",
+                            "ja",
+                            "ko",
+                            "pt",
+                            "ru",
+                            "zh"
+                        ]
+                    },
+                    "greeting": {
+                        "description": "The greeting text",
+                        "example": "Hello",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Optional description of the greeting",
+                        "example": "A friendly greeting",
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "language",
+                    "greeting"
+                ]
+            },
+            "Greeting": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier for the greeting",
+                        "example": 1,
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                    },
+                    "language": {
+                        "description": "Language code",
+                        "example": "en",
+                        "type": "string",
+                        "enum": [
+                            "de",
+                            "en",
+                            "es",
+                            "fr",
+                            "it",
+                            "ja",
+                            "ko",
+                            "pt",
+                            "ru",
+                            "zh"
+                        ]
+                    },
+                    "greeting": {
+                        "description": "The greeting text",
+                        "example": "Hello",
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "description": "Creation timestamp",
+                        "example": "2025-10-06T00:00:00.000Z",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Optional description of the greeting",
+                        "example": "A friendly greeting",
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "language",
+                    "greeting",
+                    "created_at"
+                ],
+                "additionalProperties": false
+            },
+            "TestEndpoint": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier for the test row",
+                        "example": 1,
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                    },
+                    "name": {
+                        "description": "The name value",
+                        "example": "Test Name",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "additionalProperties": false
             }
         }
     }

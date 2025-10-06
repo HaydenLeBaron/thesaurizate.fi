@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Fully functional Express.js TypeScript API with PostgreSQL database for managing greetings in different languages.
 
 Built with:
-- **Drizzle ORM** for type-safe database queries and schema management
-- **Auto-generated Zod schemas** from Drizzle schema using `drizzle-zod`
-- **Auto-generated OpenAPI specification** from Zod schemas using `@asteasolutions/zod-to-openapi`
+- **Zapatos** for type-safe database queries and TypeScript type generation
+- **pgzod** for auto-generated Zod schemas from PostgreSQL database
+- **node-pg-migrate** for database schema migrations
+- **Manual OpenAPI specification** defined in TypeScript
 - **Swagger UI** for interactive API documentation
 
 ## Repository Information
@@ -20,11 +21,13 @@ Built with:
 
 ## Architecture
 
-- **Single Source of Truth**: Database schema → Migrations → Zod → OpenAPI → Swagger UI
-- **Database Schema**: Defined in `src/db/schema.ts` using Drizzle ORM
-- **Zod Schemas**: Auto-generated from Drizzle schema
-- **OpenAPI Spec**: Auto-generated from Zod schemas
+- **Single Source of Truth**: SQL Migrations → Zapatos Types → pgzod Zod Schemas → API Validation → Manual OpenAPI Spec
+- **Database Schema**: Defined in `server/migrations/*.sql` files (raw SQL)
+- **Zapatos Types**: Auto-generated TypeScript types in `server/zapatos/schema.d.ts`
+- **Zod Schemas**: Auto-generated from database using `pgzod` in `server/src/schemas/pgzod/`
+- **OpenAPI Spec**: Manually defined in `server/src/openapi/index.ts`
 - **Swagger UI**: Interactive API documentation at `http://localhost:3000/api-docs`
+- **Field Naming**: All database fields and API responses use snake_case (e.g., `created_at`)
 
 ## API Endpoints
 
@@ -40,13 +43,34 @@ Built with:
 
 **NPM Scripts (from project root):**
 - `npm run install:all` - Install dependencies in root and `server/` directories
+- `npm run install:server` - Install dependencies in server container
 - `npm run dev` - Start docker-compose services
 - `npm run dev:build` - Rebuild and start services
 - `npm run down` - Stop docker-compose services
-- `npm run db:generate` - Generate migrations from schema changes
-- `npm run db:migrate` - Run pending migrations
-- `npm run db:push` - Push schema changes directly (development only)
-- `npm run db:studio` - Open Drizzle Studio (database GUI)
+- `npm run db:migrate` - Run pending SQL migrations
+- `npm run db:generate` - Generate Zapatos types and pgzod Zod schemas from database
+- `npm run setup` - Install server dependencies, generate types, and run migrations
+
+**Inside Server Container (for development):**
+- `npm run db:migrate:create <name>` - Create a new migration file
+- `npm run db:migrate:down` - Rollback the last migration
+- `npm run db:generate:zapatos` - Generate Zapatos TypeScript types only
+- `npm run db:generate:zod` - Generate pgzod Zod schemas only
+
+**Check Migration Status:**
+- From host: `docker-compose exec postgres psql -U postgres -d thesaurum -c "SELECT name, run_on FROM pgmigrations ORDER BY run_on;"`
+
+## Workflow for Schema Changes
+
+1. Create a new migration: `docker-compose exec server npm run db:migrate:create <migration-name>`
+   - This creates a timestamped SQL file in `server/migrations/` (e.g., `20251006170848670_migration-name.sql`)
+2. Edit the generated SQL file to add your schema changes
+3. Apply the migration: `npm run db:migrate` (from root)
+4. Generate types: `npm run db:generate` (from root)
+5. Update your API routes to use the new types/schemas
+6. Update `server/src/openapi/index.ts` if the API contract changed
+
+**Note**: Migration files use timestamps to ensure proper ordering and prevent conflicts when multiple developers work on migrations.
 
 ## SQLTools Connection
 

@@ -1,0 +1,6 @@
+{
+  "db": {
+    "connectionString": "postgresql://postgres:postgres@postgres:5432/thesaurum"
+  },
+  "outDir": "./src/zapatos"
+}

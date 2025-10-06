@@ -4,6 +4,7 @@ import './init';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import greetingsRouter from './routes/greetings';
+import testRouter from './routes/testEndpoint';
 import { openApiSpec } from './openapi';
 
 const app = express();
@@ -17,6 +18,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // Routes
 app.use('/greetings', greetingsRouter);
+app.use('/testEndpoint', testRouter);
 
 // OpenAPI spec endpoint
 app.get('/openapi.json', (req, res) => {
