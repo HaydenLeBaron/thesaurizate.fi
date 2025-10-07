@@ -8,7 +8,6 @@
     "test": "docker-compose exec server npm test",
     "test:watch": "docker-compose exec server npm run test:watch",
     "test:coverage": "docker-compose exec server npm run test:coverage",
-    "test:stress": "docker-compose exec server npm run test:stress",
     "db:generate": "docker-compose exec server npm run db:generate",
     "db:migrate": "docker-compose exec server npm run db:migrate",
     "db:migrate:generate": "npm run db:migrate && npm run db:generate",

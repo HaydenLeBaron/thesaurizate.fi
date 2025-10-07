@@ -1,27 +1,33 @@
 import { z } from 'zod';
-import { TransactionsRead } from './pgzod/index';
+import { TransactionsRead, TransactionsWrite } from './pgzod/index';
 
-// API-level transaction creation (amount in cents)
-export const CreateTransactionSchema = z.object({
-  idempotency_key: z.string().uuid().meta({ description: 'Unique key for idempotent requests' }),
-  source_user_id: z.string().uuid().meta({ description: 'UUID of the user sending funds' }),
-  destination_user_id: z.string().uuid().meta({ description: 'UUID of the user receiving funds' }),
-  amount: z.number().int().positive().meta({
-    description: 'Transfer amount in cents',
-    example: 10050
-  }),
-}).refine(data => data.source_user_id !== data.destination_user_id, {
-  message: 'Source and destination users must be different',
-}).meta({ id: 'CreateTransaction' });
+// API-level transaction creation (amount in cents) - based on TransactionsWrite with stricter validation
+export const CreateTransactionSchema = TransactionsWrite
+  .omit({ id: true, created_at: true, source_user_id: true, destination_user_id: true, amount: true })
+  .extend({
+    source_user_id: z.string().uuid().meta({ description: 'UUID of the user sending funds' }),
+    destination_user_id: z.string().uuid().meta({ description: 'UUID of the user receiving funds' }),
+    amount: z.number().int().positive().meta({
+      description: 'Transfer amount in cents',
+      example: 10050
+    }),
+  })
+  .refine(data => data.source_user_id !== data.destination_user_id, {
+    message: 'Source and destination users must be different',
+  })
+  .meta({ id: 'CreateTransaction' });
 
-// API-level deposit creation (amount in cents)
-export const CreateDepositSchema = z.object({
-  idempotency_key: z.string().uuid().meta({ description: 'Unique key for idempotent requests' }),
-  amount: z.number().int().positive().meta({
-    description: 'Deposit amount in cents',
-    example: 10000
-  }),
-}).meta({ id: 'CreateDeposit' });
+// API-level deposit creation (amount in cents) - based on TransactionsWrite with stricter validation
+// Note: destination_user_id comes from path param, not request body
+export const CreateDepositSchema = TransactionsWrite
+  .omit({ id: true, source_user_id: true, created_at: true, destination_user_id: true, amount: true })
+  .extend({
+    amount: z.number().int().positive().meta({
+      description: 'Deposit amount in cents',
+      example: 10000
+    }),
+  })
+  .meta({ id: 'CreateDeposit' });
 
 // Transaction response - use pgzod schema directly
 export const TransactionSchema = TransactionsRead.meta({ id: 'Transaction' });
