@@ -17,7 +17,7 @@ Built with:
 
 ## Repository Information
 
-- **Repository**: thesaurum-in-caelo.fi
+- **Repository**: thesaurizate.fi
 - **Current State**: Complete financial transaction API with users, transfers, deposits, and balance queries
 - **Git Branch**: transactions-mvp
 

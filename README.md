@@ -1,4 +1,11 @@
-# Thesaurum in Cælo
+# Thesaurizate FI
+
+> Thesaurizate autem vobis thesauros in caelo ubi neque erugo neque tinea demolitur et ubi fures non effodiunt nec furantur (Matthæus 6:20)
+
+
+*Lay up thy treasures in The Cloud.*
+
+---
 
 Express.js TypeScript API with PostgreSQL implementing a **ledger-based financial transaction system** with immutable audit trails and Just-In-Time (JIT) balance calculations.
 
@@ -106,7 +113,7 @@ outgoing  = WHERE source_user_id = user_id
 
 To connect to the PostgreSQL database using an external tool like the [SQLTools VS Code extension](https://marketplace.visualstudio.com/items?itemName=mtxr.sqltools), use the following settings:
 
-- **Connection Name**: `thesaurum-in-caelo-local`
+- **Connection Name**: `thesaurizate-local`
 - **Database Driver**: `PostgreSQL`
 - **Server Address**: `localhost`
 - **Port**: `5432`

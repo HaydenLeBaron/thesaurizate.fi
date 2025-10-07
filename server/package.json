@@ -1,7 +1,7 @@
 {
   "name": "thesaurum-server",
   "version": "1.0.0",
-  "description": "Express.js TypeScript server for thesaurum-in-caelo.fi",
+  "description": "Express.js TypeScript server for thesaurizate.fi",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -89,7 +89,7 @@ Zapatos Types    pgzod Schemas    Custom Schemas
 ## Directory Structure
 
 ```
-thesaurum-in-caelo.fi/
+thesaurizate.fi/
 ├── docker-compose.yml          # Container orchestration
 ├── package.json                # Root package scripts
 ├── k6-stress-test.js          # Load testing configuration
