@@ -100,6 +100,7 @@
                         "name": "id",
                         "schema": {
                             "description": "User UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -153,6 +154,7 @@
                         "name": "id",
                         "schema": {
                             "description": "User UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -197,6 +199,7 @@
                         "name": "id",
                         "schema": {
                             "description": "User UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -272,12 +275,14 @@
                 "properties": {
                     "email": {
                         "description": "User email address",
+                        "example": "user@example.com",
                         "type": "string",
                         "format": "email",
                         "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                     },
                     "password": {
                         "description": "User password (min 8 characters)",
+                        "example": "mySecurePass123",
                         "type": "string",
                         "minLength": 8
                     }
@@ -292,18 +297,21 @@
                 "properties": {
                     "idempotency_key": {
                         "description": "Unique key for idempotent requests",
+                        "example": "txn_abc123xyz",
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
                     "source_user_id": {
                         "description": "UUID of the user sending funds",
+                        "example": "550e8400-e29b-41d4-a716-446655440000",
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
                     "destination_user_id": {
                         "description": "UUID of the user receiving funds",
+                        "example": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -328,6 +336,7 @@
                 "properties": {
                     "idempotency_key": {
                         "description": "Unique key for idempotent requests",
+                        "example": "dep_xyz789abc",
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -402,7 +411,9 @@
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
                     "amount": {
-                        "type": "number"
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
                     },
                     "created_at": {
                         "type": "string"
@@ -427,6 +438,7 @@
                     },
                     "balance": {
                         "description": "Balance in cents",
+                        "example": 50000,
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991

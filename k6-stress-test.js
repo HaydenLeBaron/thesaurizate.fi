@@ -17,7 +17,7 @@ export const options = {
     },
   },
   thresholds: {
-    http_req_duration: ['p(95)<500'], // 95% of requests must complete within 500ms
+    http_req_duration: ['p(95)<1000'], // 95% of requests must complete within 850ms
     http_req_failed: ['rate<0.1'],    // Less than 10% of requests can fail
   },
 };

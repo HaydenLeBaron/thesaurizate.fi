@@ -144,10 +144,10 @@ declare module 'zapatos/schema' {
     export interface Selectable {
       /**
       * **transactions.amount**
-      * - `numeric` in database
+      * - `int8` in database
       * - `NOT NULL`, no default
       */
-      amount: db.NumericString;
+      amount: db.Int8String;
       /**
       * **transactions.created_at**
       * - `timestamptz` in database
@@ -182,7 +182,7 @@ declare module 'zapatos/schema' {
     export interface JSONSelectable {
       /**
       * **transactions.amount**
-      * - `numeric` in database
+      * - `int8` in database
       * - `NOT NULL`, no default
       */
       amount: number;
@@ -220,10 +220,10 @@ declare module 'zapatos/schema' {
     export interface Whereable {
       /**
       * **transactions.amount**
-      * - `numeric` in database
+      * - `int8` in database
       * - `NOT NULL`, no default
       */
-      amount?: (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment | db.ParentColumn>;
+      amount?: (number | db.Int8String | bigint) | db.Parameter<(number | db.Int8String | bigint)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (number | db.Int8String | bigint) | db.Parameter<(number | db.Int8String | bigint)> | db.SQLFragment | db.ParentColumn>;
       /**
       * **transactions.created_at**
       * - `timestamptz` in database
@@ -258,10 +258,10 @@ declare module 'zapatos/schema' {
     export interface Insertable {
       /**
       * **transactions.amount**
-      * - `numeric` in database
+      * - `int8` in database
       * - `NOT NULL`, no default
       */
-      amount: (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment;
+      amount: (number | db.Int8String | bigint) | db.Parameter<(number | db.Int8String | bigint)> | db.SQLFragment;
       /**
       * **transactions.created_at**
       * - `timestamptz` in database
@@ -296,10 +296,10 @@ declare module 'zapatos/schema' {
     export interface Updatable {
       /**
       * **transactions.amount**
-      * - `numeric` in database
+      * - `int8` in database
       * - `NOT NULL`, no default
       */
-      amount?: (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment | db.SQLFragment<any, (number | db.NumericString) | db.Parameter<(number | db.NumericString)> | db.SQLFragment>;
+      amount?: (number | db.Int8String | bigint) | db.Parameter<(number | db.Int8String | bigint)> | db.SQLFragment | db.SQLFragment<any, (number | db.Int8String | bigint) | db.Parameter<(number | db.Int8String | bigint)> | db.SQLFragment>;
       /**
       * **transactions.created_at**
       * - `timestamptz` in database

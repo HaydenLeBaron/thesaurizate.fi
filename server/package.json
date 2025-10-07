@@ -15,7 +15,7 @@
     "db:migrate:create": "node-pg-migrate create --migration-file-language=sql --migration-filename-format=utc",
     "db:migrate:status": "echo 'Use: docker-compose exec postgres psql -U postgres -d thesaurum -c \"SELECT name, run_on FROM pgmigrations ORDER BY run_on;\"'",
     "db:generate:zapatos": "PGHOST=${PGHOST:-postgres} PGPORT=${PGPORT:-5432} PGUSER=${PGUSER:-postgres} PGPASSWORD=${PGPASSWORD:-postgres} PGDATABASE=${PGDATABASE:-thesaurum} zapatos",
-    "db:generate:zod": "pgzod --pghost=${PGHOST:-postgres} --pgport=${PGPORT:-5432} --pguser=${PGUSER:-postgres} --pgpassword=${PGPASSWORD:-postgres} --pgdatabase=${PGDATABASE:-thesaurum} --schema=public --output=src/schemas/pgzod --strategy=readwrite --customZodTypes 'timestamp=z.coerce.date()'",
+    "db:generate:zod": "pgzod --pghost=${PGHOST:-postgres} --pgport=${PGPORT:-5432} --pguser=${PGUSER:-postgres} --pgpassword=${PGPASSWORD:-postgres} --pgdatabase=${PGDATABASE:-thesaurum} --schema=public --output=src/schemas/pgzod --strategy=readwrite --customZodTypes 'timestamp=z.coerce.date()' && sed -i 's/z\\.int8()/z.number().int()/g' src/schemas/pgzod/*.ts",
     "db:generate": "npm run db:generate:zapatos && npm run db:generate:zod"
   },
   "keywords": [],

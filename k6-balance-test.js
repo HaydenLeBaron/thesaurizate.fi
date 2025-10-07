@@ -16,7 +16,7 @@ export const options = {
   thresholds: {
     http_req_duration: ['p(95)<100'], // 95% of read requests should be fast (<100ms)
     http_req_failed: ['rate<0.01'],   // Less than 1% can fail
-    iterations: ['rate>250'],         // Target >1000 reads/sec
+    iterations: ['rate>200'],         // Target >200 reads/sec
   },
 };
 

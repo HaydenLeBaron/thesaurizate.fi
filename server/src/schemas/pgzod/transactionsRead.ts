@@ -5,7 +5,7 @@ export const TransactionsRead = z.object({
   idempotency_key: z.string().uuid(),
   source_user_id: z.string().uuid().nullable().optional(),
   destination_user_id: z.string().uuid(),
-  amount: z.number(),
+  amount: z.number().int(),
   created_at: z.string(),
 });
 

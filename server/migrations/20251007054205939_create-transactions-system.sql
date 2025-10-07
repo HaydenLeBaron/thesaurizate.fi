@@ -4,12 +4,12 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 ----------------------------------------------------
--- Table: users
+-- Table: public.users
 -- Purpose: Stores user identity and credentials.
 -- NOTE: Each user has exactly one implicit account. We lock on this row
 -- directly during transactions to prevent concurrent transfers.
 ----------------------------------------------------
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
@@ -18,17 +18,17 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 ----------------------------------------------------
--- Table: transactions
+-- Table: public.transactions
 -- Purpose: An immutable, append-only ledger of all financial movements.
 -- This serves as the permanent audit trail and the ONLY source of truth for balances.
 ----------------------------------------------------
-CREATE TABLE IF NOT EXISTS transactions (
+CREATE TABLE IF NOT EXISTS public.transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     -- The UNIQUE constraint provides perfect, database-enforced idempotency.
     idempotency_key UUID NOT NULL UNIQUE,
     -- NULL source_user_id indicates a deposit (money injection into the system)
-    source_user_id UUID REFERENCES users(id),
-    destination_user_id UUID NOT NULL REFERENCES users(id),
+    source_user_id UUID REFERENCES public.users(id),
+    destination_user_id UUID NOT NULL REFERENCES public.users(id),
     -- Amount stored as integer representing cents. Ensures a transaction always represents a positive movement of funds.
     amount BIGINT NOT NULL CHECK (amount > 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -38,12 +38,12 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Optimized indexes for JIT balance calculation and transaction queries
 ----------------------------------------------------
 -- Composite index for balance queries (covers both source + destination lookups)
-CREATE INDEX idx_transactions_user_balance
-ON transactions (source_user_id, destination_user_id, created_at, amount);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_balance
+ON public.transactions (source_user_id, destination_user_id, created_at, amount);
 
 -- Individual indexes for transaction history queries
-CREATE INDEX idx_transactions_source ON transactions (source_user_id, created_at);
-CREATE INDEX idx_transactions_dest ON transactions (destination_user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_transactions_source ON public.transactions (source_user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_transactions_dest ON public.transactions (destination_user_id, created_at);
 
 ----------------------------------------------------
 -- Function: public.get_balance_on_date
@@ -63,7 +63,7 @@ RETURNS BIGINT AS $$
             ELSE 0
         END
     ), 0)
-    FROM transactions
+    FROM public.transactions
     WHERE (source_user_id = p_user_id OR destination_user_id = p_user_id)
         AND created_at <= p_date;
 $$ LANGUAGE sql STABLE PARALLEL SAFE;
@@ -86,6 +86,6 @@ DROP FUNCTION IF EXISTS public.get_balance_on_date(UUID, TIMESTAMPTZ);
 DROP INDEX IF EXISTS idx_transactions_dest;
 DROP INDEX IF EXISTS idx_transactions_source;
 DROP INDEX IF EXISTS idx_transactions_user_balance;
-DROP TABLE IF EXISTS transactions;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS public.transactions;
+DROP TABLE IF EXISTS public.users;
 DROP EXTENSION IF EXISTS "uuid-ossp";

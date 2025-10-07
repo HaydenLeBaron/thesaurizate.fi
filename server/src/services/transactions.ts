@@ -107,7 +107,7 @@ export async function executeTransaction(data: {
         // CRITICAL: This calculation happens INSIDE the transaction with locks held,
         // guaranteeing that the balance cannot change between check and transaction creation.
         const balanceResult = await db.sql<s.transactions.SQL, Array<{ balance: string }>>`
-          SELECT get_current_balance(${db.param(data.sourceUserId)}::uuid) as balance
+          SELECT public.get_current_balance(${db.param(data.sourceUserId)}::uuid) as balance
         `.run(txClient);
 
         const sourceBalance = parseInt(balanceResult[0].balance, 10);
@@ -169,7 +169,7 @@ export async function executeTransaction(data: {
  */
 export async function getUserBalance(userId: string): Promise<number> {
   const result = await db.sql<s.transactions.SQL, Array<{ balance: string }>>`
-    SELECT get_current_balance(${db.param(userId)}::uuid) as balance
+    SELECT public.get_current_balance(${db.param(userId)}::uuid) as balance
   `.run(pool);
 
   return parseInt(result[0].balance, 10);
@@ -181,7 +181,7 @@ export async function getUserBalance(userId: string): Promise<number> {
  */
 export async function getUserBalanceOnDate(userId: string, date: Date): Promise<number> {
   const result = await db.sql<s.transactions.SQL, Array<{ balance: string }>>`
-    SELECT get_balance_on_date(${db.param(userId)}::uuid, ${db.param(date)}::timestamptz) as balance
+    SELECT public.get_balance_on_date(${db.param(userId)}::uuid, ${db.param(date)}::timestamptz) as balance
   `.run(pool);
 
   return parseInt(result[0].balance, 10);
