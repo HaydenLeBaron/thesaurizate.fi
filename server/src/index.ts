@@ -20,22 +20,21 @@ app.use(express.urlencoded({ extended: true })); // For OAuth form-encoded reque
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
-// Routes
-app.use('/', transactionsRouter);
-app.use('/', usersRouter);
-app.use('/oauth', authRouter);
-app.use('/', plaidRouter);
-app.use('/.well-known', wellKnownRouter);
-
-// OpenAPI spec endpoint
+// Public endpoints (no authentication required)
 app.get('/openapi.json', (req, res) => {
   res.json(openApiSpec);
 });
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Routes
+app.use('/', transactionsRouter);
+app.use('/', usersRouter);
+app.use('/oauth', authRouter);
+app.use('/.well-known', wellKnownRouter);
+app.use('/', plaidRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
