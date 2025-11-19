@@ -9,6 +9,15 @@ import {
   UserIdPathSchema,
 } from '../schemas/transactions';
 import { CreateUserSchema, UserSchema } from '../schemas/users';
+import {
+  AccountSchema,
+  PlaidTransactionSchema,
+  PaymentNetworkSchema,
+  ContactSchema,
+  AccountIdPathSchema,
+  TransactionQuerySchema,
+  ErrorResponseSchema,
+} from '../schemas/plaid';
 
 export const openApiSpec = createDocument({
   openapi: '3.1.0',
@@ -189,6 +198,372 @@ export const openApiSpec = createDocument({
             },
           },
         },
+      },
+    },
+    // OAuth 2.0 / OIDC Endpoints
+    '/oauth/token': {
+      post: {
+        summary: 'OAuth 2.0 Token Endpoint',
+        description: 'Exchange client credentials or authorization code for access token',
+        tags: ['OAuth'],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: z.object({
+                grant_type: z.enum(['client_credentials', 'authorization_code']),
+                client_id: z.string(),
+                client_secret: z.string().optional(),
+                code: z.string().optional(),
+                scope: z.string().optional(),
+              }),
+            },
+            'application/x-www-form-urlencoded': {
+              schema: z.object({
+                grant_type: z.enum(['client_credentials', 'authorization_code']),
+                client_id: z.string(),
+                client_secret: z.string().optional(),
+                code: z.string().optional(),
+                scope: z.string().optional(),
+              }),
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Token issued successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  access_token: z.string(),
+                  token_type: z.literal('Bearer'),
+                  expires_in: z.number(),
+                  scope: z.string().optional(),
+                  id_token: z.string().optional(),
+                }),
+              },
+            },
+          },
+          '400': {
+            description: 'Invalid request',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '401': {
+            description: 'Invalid client credentials',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/oauth/userinfo': {
+      get: {
+        summary: 'OIDC UserInfo Endpoint',
+        description: 'Get user information from access token',
+        tags: ['OAuth'],
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'User information',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  sub: z.string(),
+                  email: z.string().optional(),
+                  email_verified: z.boolean().optional(),
+                  name: z.string().optional(),
+                }),
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/.well-known/openid-configuration': {
+      get: {
+        summary: 'OIDC Discovery Endpoint',
+        description: 'OpenID Connect discovery document',
+        tags: ['OAuth'],
+        responses: {
+          '200': {
+            description: 'OIDC configuration',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  issuer: z.string(),
+                  authorization_endpoint: z.string(),
+                  token_endpoint: z.string(),
+                  userinfo_endpoint: z.string(),
+                  jwks_uri: z.string(),
+                  response_types_supported: z.array(z.string()),
+                  grant_types_supported: z.array(z.string()),
+                  scopes_supported: z.array(z.string()),
+                  id_token_signing_alg_values_supported: z.array(z.string()),
+                  token_endpoint_auth_methods_supported: z.array(z.string()),
+                }),
+              },
+            },
+          },
+        },
+      },
+    },
+    '/.well-known/jwks.json': {
+      get: {
+        summary: 'JWKS Endpoint',
+        description: 'JSON Web Key Set for token verification',
+        tags: ['OAuth'],
+        responses: {
+          '200': {
+            description: 'JWKS document',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  keys: z.array(z.any()),
+                }),
+              },
+            },
+          },
+        },
+      },
+    },
+    // Plaid Core Exchange / FDX Endpoints
+    '/accounts': {
+      get: {
+        summary: 'List Accounts',
+        description: 'Get all accounts for authenticated user',
+        tags: ['Plaid'],
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'List of accounts',
+            content: {
+              'application/json': {
+                schema: z.array(AccountSchema),
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/accounts/{accountId}': {
+      get: {
+        summary: 'Get Account Details',
+        description: 'Get detailed account information',
+        tags: ['Plaid'],
+        security: [{ BearerAuth: [] }],
+        requestParams: {
+          path: AccountIdPathSchema,
+        },
+        responses: {
+          '200': {
+            description: 'Account details',
+            content: {
+              'application/json': {
+                schema: AccountSchema,
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/accounts/{accountId}/transactions': {
+      get: {
+        summary: 'Get Account Transactions',
+        description: 'Get transaction history for an account',
+        tags: ['Plaid'],
+        security: [{ BearerAuth: [] }],
+        requestParams: {
+          path: AccountIdPathSchema,
+          query: TransactionQuerySchema,
+        },
+        responses: {
+          '200': {
+            description: 'List of transactions',
+            content: {
+              'application/json': {
+                schema: z.array(PlaidTransactionSchema),
+              },
+            },
+          },
+          '400': {
+            description: 'Bad request',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/accounts/{accountId}/payment-networks': {
+      get: {
+        summary: 'Get Payment Networks',
+        description: 'Get payment network information for an account',
+        tags: ['Plaid'],
+        security: [{ BearerAuth: [] }],
+        requestParams: {
+          path: AccountIdPathSchema,
+        },
+        responses: {
+          '200': {
+            description: 'Payment network information',
+            content: {
+              'application/json': {
+                schema: PaymentNetworkSchema,
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    '/accounts/{accountId}/contact': {
+      get: {
+        summary: 'Get Account Contact',
+        description: 'Get contact information for an account',
+        tags: ['Plaid'],
+        security: [{ BearerAuth: [] }],
+        requestParams: {
+          path: AccountIdPathSchema,
+        },
+        responses: {
+          '200': {
+            description: 'Contact information',
+            content: {
+              'application/json': {
+                schema: ContactSchema,
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  components: {
+    securitySchemes: {
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'OAuth 2.0 Bearer Token',
       },
     },
   },
