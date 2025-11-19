@@ -12,6 +12,7 @@ Built with:
 - **node-pg-migrate** for database schema migrations
 - **Manual OpenAPI specification** defined in TypeScript
 - **Swagger UI** for interactive API documentation
+- **express-oauth-server** for OAuth 2.0/OIDC authentication
 - **Jest** for comprehensive unit and integration testing
 - **k6** for load and stress testing
 
@@ -56,14 +57,32 @@ Built with:
 
 ## API Endpoints
 
+### Public Endpoints (No Authentication)
+- `GET /health` - Health check endpoint
+- `GET /api-docs` - Swagger UI documentation
+- `GET /openapi.json` - OpenAPI specification
+
+### User & Transaction Endpoints
 - `POST /users` - Create a new user
 - `POST /transactions` - Transfer funds between users
 - `POST /users/:id/deposit` - Deposit funds into user account
 - `GET /users/:id/balance` - Get current balance (or historical with ?date= query param)
 - `GET /users/:id/transactions` - Get transaction history for a user
-- `GET /api-docs` - Swagger UI documentation
-- `GET /openapi.json` - OpenAPI specification
-- `GET /health` - Health check endpoint
+
+### OAuth 2.0 / OIDC Endpoints
+- `POST /oauth/token` - OAuth 2.0 token endpoint (client credentials or authorization code grant)
+- `GET /oauth/authorize` - OAuth 2.0 authorization endpoint
+- `POST /oauth/authorize` - OAuth 2.0 authorization endpoint (POST)
+- `GET /oauth/userinfo` - OIDC UserInfo endpoint (requires Bearer token)
+- `GET /.well-known/openid-configuration` - OIDC discovery endpoint
+- `GET /.well-known/jwks.json` - JWKS endpoint
+
+### Plaid Core Exchange Endpoints (Require Bearer Token)
+- `GET /accounts` - List all accounts for authenticated user
+- `GET /accounts/:accountId` - Get detailed account information
+- `GET /accounts/:accountId/transactions` - Get transaction history for account (supports pagination and date filtering)
+- `GET /accounts/:accountId/payment-networks` - Get payment network information
+- `GET /accounts/:accountId/contact` - Get contact information for account
 
 ## Development Commands
 
@@ -139,7 +158,14 @@ CREATE TABLE users (
   email        TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- Plaid Core Exchange fields
+  account_number TEXT,
+  routing_number TEXT,
+  account_type   TEXT,
+  contact_email  TEXT,
+  contact_phone  TEXT,
+  account_name   TEXT
 );
 ```
 
@@ -201,13 +227,35 @@ The project includes a PostgreSQL database running in Docker. To connect to it d
 - **User**: `postgres`
 - **Password**: `postgres`
 
+## Authentication & Authorization
+
+### OAuth 2.0 / OIDC Implementation
+- **Library**: `express-oauth-server` with `oauth2-server` for OAuth 2.0/OIDC
+- **Grant Types**: `client_credentials`, `authorization_code`
+- **Token Format**: JWT (JSON Web Tokens) with HS256 signing
+- **Token Lifetime**: 1 hour (configurable)
+- **Scopes**: `openid`, `profile`, `accounts`, `transactions`
+- **Configuration**: `server/src/config/auth.ts` (uses environment variables)
+
+### Authentication Flow
+1. **Client Credentials Grant**: Service-to-service authentication via `/oauth/token`
+2. **Authorization Code Grant**: User authorization flow via `/oauth/authorize` → `/oauth/token`
+3. **Bearer Token**: All Plaid Core Exchange endpoints require `Authorization: Bearer <token>` header
+
+### Environment Variables Required
+- `JWT_SECRET` - Secret key for JWT signing (required)
+- `PLAID_CLIENT_ID` - Plaid client identifier (required)
+- `PLAID_CLIENT_SECRET` - Plaid client secret (required)
+- `OIDC_ISSUER` - OIDC issuer URL (defaults to `http://localhost:3000`)
+
 ## Important Notes
 
 ### Security (Development Mode)
 - Password hashing is currently **disabled** for testing (see `server/src/routes/users.ts:20`)
 - In production, uncomment bcrypt hashing logic
-- No authentication/authorization implemented yet
+- OAuth 2.0/OIDC authentication implemented for Plaid Core Exchange endpoints
 - Database credentials are hardcoded for development
+- JWT secret and Plaid credentials should use environment variables in production
 
 ### Amounts Storage
 - All amounts are stored as **BIGINT representing cents** (e.g., $10.00 = 1000 cents)
@@ -223,3 +271,11 @@ The project includes a PostgreSQL database running in Docker. To connect to it d
 - Current balance: `GET /users/:id/balance`
 - Historical balance: `GET /users/:id/balance?date=2025-01-01T00:00:00Z`
 - Balances are always computed from the ledger (never stored)
+
+### Plaid Core Exchange
+- **Account Model**: 1 user = 1 account (account info stored in `users` table)
+- **FDX Compliance**: All Plaid endpoints follow FDX (Financial Data Exchange) standards
+- **Authentication**: All Plaid endpoints require Bearer token authentication
+- **Account ID**: Uses user UUID as account identifier
+- **Service Layer**: Business logic in `server/src/services/plaid.ts`
+- **Schemas**: Request/response validation in `server/src/schemas/plaid.ts`

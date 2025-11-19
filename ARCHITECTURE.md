@@ -28,6 +28,12 @@ Thesaurum is a type-safe Express.js REST API built with TypeScript, PostgreSQL, 
 - **Zod 4**: Schema validation and type inference
 - **zod-openapi**: Bridges Zod schemas to OpenAPI specification
 
+### Authentication & Authorization
+- **express-oauth-server**: OAuth 2.0 server middleware for Express.js
+- **oauth2-server**: Core OAuth 2.0 server logic
+- **jsonwebtoken**: JWT token generation and verification
+- **OAuth 2.0 / OIDC**: Plaid Core Exchange compliant authentication
+
 ### Testing
 - **Jest**: Unit and integration testing framework
 - **Supertest**: HTTP assertion library for API testing
@@ -100,7 +106,8 @@ thesaurizate.fi/
     ├── migrations/             # SQL migration files
     │   ├── 20251006202559187_create-transactions-system.sql
     │   ├── 20251007005016874_private-schema.sql
-    │   └── 20251007005017000_failed-transactions.sql
+    │   ├── 20251007005017000_failed-transactions.sql
+    │   └── 20251119203023_plaid-core-exchange.sql
     ├── zapatos/                # Auto-generated Zapatos types
     │   └── schema.d.ts         # TypeScript types from DB
     └── src/
@@ -111,12 +118,23 @@ thesaurizate.fi/
         │   └── migrate.ts      # Migration runner script
         ├── routes/
         │   ├── transactions.ts # Transaction endpoints
-        │   └── users.ts        # User endpoints
+        │   ├── users.ts        # User endpoints
+        │   ├── auth.ts         # OAuth 2.0/OIDC endpoints
+        │   ├── plaid.ts        # Plaid Core Exchange endpoints
+        │   └── well-known.ts  # OIDC discovery endpoints
         ├── services/
-        │   └── transactions.ts # Transaction business logic
+        │   ├── transactions.ts # Transaction business logic
+        │   ├── plaid.ts        # Plaid Core Exchange business logic
+        │   ├── oauth-server.ts # OAuth server instance
+        │   └── oauth-model.ts  # OAuth model implementation
+        ├── middleware/
+        │   └── auth.ts         # Authentication middleware
+        ├── config/
+        │   └── auth.ts         # OAuth configuration
         ├── schemas/
         │   ├── users.ts        # User Zod schemas for API
         │   ├── transactions.ts # Transaction Zod schemas for API
+        │   ├── plaid.ts        # Plaid Core Exchange Zod schemas
         │   └── pgzod/          # Auto-generated Zod schemas
         │       ├── index.ts
         │       ├── usersRead.ts
@@ -196,6 +214,14 @@ npm run db:generate:zod
 
 ### API Routes
 
+#### Public Endpoints (No Authentication)
+| Method | Endpoint | Description | Validation |
+|--------|----------|-------------|------------|
+| GET | `/health` | Health check | None |
+| GET | `/api-docs` | Swagger UI | None |
+| GET | `/openapi.json` | OpenAPI spec | None |
+
+#### User & Transaction Endpoints
 | Method | Endpoint | Description | Validation |
 |--------|----------|-------------|------------|
 | POST | `/users` | Create a new user | `CreateUserSchema` |
@@ -203,9 +229,24 @@ npm run db:generate:zod
 | POST | `/users/:id/deposit` | Deposit funds into account | `CreateDepositSchema` |
 | GET | `/users/:id/balance` | Get current/historical balance | `UserIdPathSchema`, `BalanceQuerySchema` |
 | GET | `/users/:id/transactions` | Get transaction history | `UserIdPathSchema` |
-| GET | `/health` | Health check | None |
-| GET | `/api-docs` | Swagger UI | None |
-| GET | `/openapi.json` | OpenAPI spec | None |
+
+#### OAuth 2.0 / OIDC Endpoints
+| Method | Endpoint | Description | Authentication |
+|--------|----------|-------------|----------------|
+| POST | `/oauth/token` | OAuth 2.0 token endpoint | Client credentials |
+| GET/POST | `/oauth/authorize` | OAuth 2.0 authorization endpoint | User authentication |
+| GET | `/oauth/userinfo` | OIDC UserInfo endpoint | Bearer token |
+| GET | `/.well-known/openid-configuration` | OIDC discovery endpoint | None |
+| GET | `/.well-known/jwks.json` | JWKS endpoint | None |
+
+#### Plaid Core Exchange Endpoints (Require Authentication)
+| Method | Endpoint | Description | Validation |
+|--------|----------|-------------|------------|
+| GET | `/accounts` | List all accounts for authenticated user | Bearer token |
+| GET | `/accounts/:accountId` | Get detailed account information | `AccountIdPathSchema`, Bearer token |
+| GET | `/accounts/:accountId/transactions` | Get transaction history for account | `AccountIdPathSchema`, `TransactionQuerySchema`, Bearer token |
+| GET | `/accounts/:accountId/payment-networks` | Get payment network information | `AccountIdPathSchema`, Bearer token |
+| GET | `/accounts/:accountId/contact` | Get contact information for account | `AccountIdPathSchema`, Bearer token |
 
 ## Type Safety Implementation
 
@@ -411,6 +452,10 @@ npm run dev              # Start Docker services
 - `DATABASE_URL`: PostgreSQL connection string
 - `NODE_ENV`: development
 - `PORT`: 3000 (default)
+- `JWT_SECRET`: Secret key for JWT signing (required for OAuth)
+- `PLAID_CLIENT_ID`: Plaid client identifier (required for Plaid Core Exchange)
+- `PLAID_CLIENT_SECRET`: Plaid client secret (required for Plaid Core Exchange)
+- `OIDC_ISSUER`: OIDC issuer URL (defaults to `http://localhost:3000`)
 
 ## Database Schema
 
@@ -423,11 +468,18 @@ CREATE TABLE users (
   email        TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- Plaid Core Exchange fields
+  account_number TEXT,
+  routing_number TEXT,
+  account_type   TEXT,
+  contact_email  TEXT,
+  contact_phone  TEXT,
+  account_name   TEXT
 );
 ```
 
-**Purpose**: Store user identity and credentials. Each user has exactly one implicit account.
+**Purpose**: Store user identity and credentials. Each user has exactly one implicit account. Extended with Plaid Core Exchange fields for account information.
 
 #### `transactions` (public schema)
 ```sql
@@ -609,24 +661,66 @@ The `k6-stress-test.js` configuration simulates production-like load:
 k6 run k6-stress-test.js
 ```
 
+## Authentication & Authorization
+
+### OAuth 2.0 / OIDC Implementation
+
+The system implements OAuth 2.0 and OpenID Connect (OIDC) for Plaid Core Exchange integration using `express-oauth-server`:
+
+- **Grant Types Supported**: `client_credentials`, `authorization_code`
+- **Token Format**: JWT (JSON Web Tokens) with HS256 signing
+- **Scopes**: `openid`, `profile`, `accounts`, `transactions`
+- **Token Lifetime**: 1 hour (configurable)
+
+### Authentication Flow
+
+1. **Client Credentials Grant** (for service-to-service):
+   - Client authenticates with `client_id` and `client_secret`
+   - Receives access token via `/oauth/token`
+   - Uses Bearer token for API requests
+
+2. **Authorization Code Grant** (for user authorization):
+   - User authorizes via `/oauth/authorize`
+   - Receives authorization code
+   - Exchanges code for access token via `/oauth/token`
+   - Uses Bearer token for API requests
+
+### Authentication Middleware
+
+The `authenticateToken` middleware (`server/src/middleware/auth.ts`) validates Bearer tokens on protected routes:
+- Extracts token from `Authorization: Bearer <token>` header
+- Verifies JWT signature and expiration
+- Attaches user information to `req.user`
+
+### Configuration
+
+OAuth settings are configured in `server/src/config/auth.ts`:
+- `JWT_SECRET`: Secret key for JWT signing (set via environment variable)
+- `PLAID_CLIENT_ID`: Plaid client identifier
+- `PLAID_CLIENT_SECRET`: Plaid client secret
+- `OIDC_ISSUER`: OIDC issuer URL (defaults to `http://localhost:3000`)
+
 ## Security Considerations
 
 ### Current State (Development)
-- Hardcoded database credentials
-- No authentication/authorization
+- OAuth 2.0/OIDC authentication implemented
+- JWT token-based authentication for Plaid Core Exchange endpoints
+- Hardcoded database credentials (development only)
 - Password hashing disabled (for testing)
 - CORS not configured
 - No rate limiting
 
 ### Production Recommendations
-- Environment-based secrets management
-- Authentication middleware (JWT, OAuth)
+- Environment-based secrets management (JWT_SECRET, PLAID_CLIENT_SECRET)
 - Enable bcrypt password hashing
 - CORS configuration
 - Input sanitization
 - Rate limiting (express-rate-limit)
 - SQL injection protection (parameterized queries via Zapatos)
 - Row-level security (PostgreSQL RLS)
+- Token refresh mechanism
+- Secure token storage
+- HTTPS enforcement
 
 ## Performance Considerations
 
@@ -662,6 +756,31 @@ k6 run k6-stress-test.js
 - Transaction metrics (volume, latency, failures)
 - Balance drift monitoring (should never occur)
 
+## Plaid Core Exchange Integration
+
+### Overview
+
+The system implements Plaid Core Exchange API endpoints compliant with FDX (Financial Data Exchange) standards. This enables integration with Plaid's financial data aggregation services.
+
+### Account Model
+
+The system uses a **1 user = 1 account** model, where each user in the `users` table represents a single financial account. Account-specific information (account number, routing number, etc.) is stored directly in the `users` table.
+
+### API Compliance
+
+- **FDX-compliant endpoints**: All Plaid endpoints follow FDX specification
+- **OAuth 2.0 authentication**: Bearer token authentication required
+- **Standard error responses**: Consistent error format across endpoints
+- **Zod validation**: Request/response validation using Zod schemas
+
+### Service Layer
+
+The Plaid service layer (`server/src/services/plaid.ts`) provides:
+- Account listing and details retrieval
+- Transaction history with pagination and date filtering
+- Payment network information
+- Contact information retrieval
+
 ## Future Architecture Considerations
 
 ### Scalability
@@ -678,7 +797,5 @@ k6 run k6-stress-test.js
 ### Feature Additions
 - Withdrawals: Support for removing money from the system
 - Transaction reversal: Compensating transactions for refunds
-- Multi-currency: Support for different currencies
-- Background jobs: Async processing for reporting
-- GraphQL layer: Apollo Server for flexible querying
-- Real-time: WebSocket support for live balance updates
+- OAuth token refresh: Implement refresh token flow
+- Multi-account support: Support multiple accounts per user
