@@ -128,6 +128,7 @@ To connect to the PostgreSQL database using an external tool like the [SQLTools 
 - `npm run install:server` - Install dependencies in server container
 - `npm run db:generate` - Generate Zapatos types and pgzod Zod schemas from database
 - `npm run db:migrate` - Run pending SQL migrations
+- `npm run db:migrate:down` - Rollback the last migration
 - `npm run db:migrate:generate` - Apply migrations and regenerate types
 - `npm run dev` - Start docker-compose services
 - `npm run dev:build` - Rebuild and start services
@@ -256,7 +257,7 @@ Tracks failed transaction attempts for debugging and recovery.
 
 **Additional Migration Commands:**
 - `npm run db:migrate` - Apply pending migrations
-- `docker-compose exec server npm run db:migrate:down` - Rollback last migration
+- `npm run db:migrate:down` - Rollback last migration
 - `docker-compose exec postgres psql -U postgres -d thesaurum -c "SELECT name, run_on FROM pgmigrations ORDER BY run_on;"` - View migration status
 
 **Note**: Migrations use UTC timestamp-based filenames for proper ordering and to avoid conflicts.

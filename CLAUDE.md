@@ -93,6 +93,7 @@ Built with:
 - `npm run dev:build` - Rebuild and start services
 - `npm run down` - Stop docker-compose services
 - `npm run db:migrate` - Run pending SQL migrations
+- `npm run db:migrate:down` - Rollback the last migration
 - `npm run db:generate` - Generate Zapatos types and pgzod Zod schemas from database
 - `npm run db:migrate:generate` - Apply migrations and regenerate types
 - `npm run setup` - Install server dependencies, generate types, and run migrations
