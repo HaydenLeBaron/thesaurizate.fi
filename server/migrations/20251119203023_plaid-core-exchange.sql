@@ -8,12 +8,12 @@
 -- the users table rather than creating a separate accounts table.
 ----------------------------------------------------
 ALTER TABLE public.users
-ADD COLUMN IF NOT EXISTS account_number TEXT NOT NULL,
+ADD COLUMN IF NOT EXISTS account_number TEXT NOT NULL UNIQUE,
 ADD COLUMN IF NOT EXISTS routing_number TEXT NOT NULL,
 ADD COLUMN IF NOT EXISTS account_type TEXT NOT NULL,
-ADD COLUMN IF NOT EXISTS contact_email TEXT NOT NULL,
-ADD COLUMN IF NOT EXISTS contact_phone TEXT NOT NULL,
-ADD COLUMN IF NOT EXISTS account_name TEXT NOT NULL;
+ADD COLUMN IF NOT EXISTS contact_email TEXT NOT NULL UNIQUE,
+ADD COLUMN IF NOT EXISTS contact_phone TEXT NOT NULL UNIQUE,
+ADD COLUMN IF NOT EXISTS account_name TEXT NOT NULL UNIQUE;
 
 -- Down Migration
 
