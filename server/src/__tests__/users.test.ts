@@ -65,7 +65,7 @@ describe('Users API', () => {
         .send(userData)
         .expect(409);
 
-      expect(response.body.error).toBe('Email already exists');
+      expect(response.body.error).toBe('User already exists');
     });
 
     it('should reject missing email', async () => {

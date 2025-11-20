@@ -2,6 +2,7 @@ import { authConfig } from '../config/auth';
 import * as db from 'zapatos/db';
 import { pool } from '../db';
 import type * as s from 'zapatos/schema';
+import jwt from 'jsonwebtoken';
 
 /**
  * OAuth 2.0 model for express-oauth-server
@@ -43,9 +44,8 @@ export const oauthModel = {
     // In production, store tokens in database
     // For now, we'll verify JWT tokens on the fly
     try {
-      const jwt = await import('jsonwebtoken');
       const decoded = jwt.verify(accessToken, authConfig.jwtSecret) as any;
-      
+
       return {
         accessToken,
         accessTokenExpiresAt: new Date(decoded.exp * 1000),
@@ -67,21 +67,34 @@ export const oauthModel = {
 
   /**
    * Get client
+   * oauth2-server calls this with both clientId and clientSecret.
+   * We should validate both and return null if either doesn't match.
    */
-  getClient: async (clientId: string, clientSecret: string): Promise<OAuthClient | null> => {
-    if (
-      clientId === authConfig.plaidClientId &&
-      clientSecret === authConfig.plaidClientSecret
-    ) {
-      return {
-        id: 'plaid-client',
-        clientId: authConfig.plaidClientId,
-        clientSecret: authConfig.plaidClientSecret,
-        grants: ['client_credentials', 'authorization_code'],
-        redirectUris: [process.env.PLAID_REDIRECT_URI || 'http://localhost:3000/oauth/callback'],
-      };
+  getClient: async (clientId: string, clientSecret?: string): Promise<OAuthClient | null> => {
+    console.log('[getClient] Called with:', { clientId, hasSecret: !!clientSecret, expectedId: authConfig.plaidClientId });
+
+    // If clientId doesn't match, return null
+    if (clientId !== authConfig.plaidClientId) {
+      console.log('[getClient] ClientId mismatch');
+      return null;
     }
-    return null;
+
+    // Validate clientSecret - it must be provided and must match
+    if (!clientSecret || clientSecret !== authConfig.plaidClientSecret) {
+      console.log('[getClient] ClientSecret mismatch or missing');
+      return null;
+    }
+
+    // Return client with grants
+    const client = {
+      id: 'plaid-client',
+      clientId: authConfig.plaidClientId,
+      clientSecret: authConfig.plaidClientSecret,
+      grants: ['client_credentials', 'authorization_code'],
+      redirectUris: [process.env.PLAID_REDIRECT_URI || 'http://localhost:3000/oauth/callback'],
+    };
+    console.log('[getClient] Returning client:', client.id);
+    return client;
   },
 
   /**
@@ -89,9 +102,8 @@ export const oauthModel = {
    * Generates JWT access token
    */
   saveToken: async (token: OAuthToken, client: OAuthClient, user: any): Promise<OAuthToken> => {
-    const jwt = await import('jsonwebtoken');
     const now = Math.floor(Date.now() / 1000);
-    
+
     // Generate JWT access token
     const payload = {
       sub: user?.id || 'service-account',
@@ -129,6 +141,25 @@ export const oauthModel = {
     } catch (error) {
       return null;
     }
+  },
+
+  /**
+   * Get user from client (required for client_credentials grant)
+   * For client credentials flow, we return a service account user
+   */
+  getUserFromClient: async (client: OAuthClient): Promise<any> => {
+    console.log('[getUserFromClient] Called with client:', client?.id);
+    if (!client) {
+      console.log('[getUserFromClient] Client is null!');
+      throw new Error('Client is required');
+    }
+    // For client credentials, return a service account user
+    const user = {
+      id: 'service-account',
+      email: 'service@thesaurum.local',
+    };
+    console.log('[getUserFromClient] Returning user:', user.id);
+    return user;
   },
 
   /**

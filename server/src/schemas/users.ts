@@ -7,6 +7,12 @@ export const CreateUserSchema = UsersWrite
   .extend({
     email: UsersWrite.shape.email.email().meta({ description: 'User email address', example: 'user@example.com' }),
     password: z.string().min(8).meta({ description: 'User password (min 8 characters)', example: 'mySecurePass123' }),
+    account_number: z.string().meta({ description: 'Account number', example: '123456789' }),
+    routing_number: z.string().meta({ description: 'Bank routing number', example: '987654321' }),
+    account_type: z.string().meta({ description: 'Account type (e.g., depository, checking, savings)', example: 'depository' }),
+    contact_email: z.string().email().meta({ description: 'Contact email address', example: 'contact@example.com' }),
+    contact_phone: z.string().meta({ description: 'Contact phone number', example: '+1234567890' }),
+    account_name: z.string().meta({ description: 'Account name', example: 'My Account' }),
   })
   .meta({ id: 'CreateUser' });
 

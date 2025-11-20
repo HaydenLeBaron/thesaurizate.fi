@@ -25,6 +25,6 @@ export const authConfig = {
     supportedGrantTypes: ['client_credentials', 'authorization_code'] as const,
 
     // Supported scopes
-    supportedScopes: ['openid', 'profile', 'accounts', 'transactions'] as const,
+    supportedScopes: ['openid', 'profile', 'accounts', 'transactions', 'admin'] as const,
 };
 

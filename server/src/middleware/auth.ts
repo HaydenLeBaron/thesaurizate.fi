@@ -39,3 +39,30 @@ export function authenticateToken(
         next();
     });
 }
+
+/**
+ * Middleware to check if the authenticated user has admin scope
+ */
+export function requireAdmin(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+): void {
+    if (!req.user) {
+        res.status(401).json({
+            error: 'unauthorized',
+            error_description: 'Authentication required',
+        });
+        return;
+    }
+
+    if (!req.user.scopes || !req.user.scopes.includes('admin')) {
+        res.status(403).json({
+            error: 'forbidden',
+            error_description: 'Admin scope required',
+        });
+        return;
+    }
+
+    next();
+}

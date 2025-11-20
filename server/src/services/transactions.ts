@@ -97,11 +97,28 @@ export async function executeTransaction(data: {
         // Since each user = one account, we lock the user rows directly
         const lockOrderIds = [data.sourceUserId, data.destinationUserId].sort();
 
-        await Promise.all(
-          lockOrderIds.map((userId) =>
-            db.sql`SELECT FROM users WHERE ${{ id: userId }} FOR UPDATE`.run(txClient)
-          )
+        // Lock and verify users exist in sorted order to prevent deadlocks
+        const lockedUsers = await Promise.all(
+          lockOrderIds.map((userId) => {
+            // Use a subquery approach to select and lock
+            return db.sql<s.users.SQL, s.users.Selectable[]>`
+              SELECT * FROM ${'users'} 
+              WHERE id = ${db.param(userId)}::uuid 
+              FOR UPDATE
+            `.run(txClient);
+          })
         );
+
+        // 3a. Verify both users exist
+        const sourceUser = lockedUsers.find(rows => rows.length > 0 && rows[0]?.id === data.sourceUserId)?.[0];
+        const destinationUser = lockedUsers.find(rows => rows.length > 0 && rows[0]?.id === data.destinationUserId)?.[0];
+
+        if (!sourceUser) {
+          throw new Error(`User not found: ${data.sourceUserId}`);
+        }
+        if (!destinationUser) {
+          throw new Error(`User not found: ${data.destinationUserId}`);
+        }
 
         // 4. JIT Balance Verification (Single Source of Truth)
         // CRITICAL: This calculation happens INSIDE the transaction with locks held,

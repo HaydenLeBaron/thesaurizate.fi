@@ -12,6 +12,7 @@
     "db:migrate": "docker-compose exec server npm run db:migrate && npm run db:dump",
     "db:migrate:down": "docker-compose exec server npm run db:migrate:down",
     "db:migrate:generate": "npm run db:migrate && npm run db:generate",
+    "db:truncate:users": "docker-compose exec postgres psql -U postgres -d thesaurum -c 'TRUNCATE TABLE users CASCADE;'",
     "db:dump": "docker-compose exec postgres pg_dump -U postgres -d thesaurum --schema-only -f /tmp/schema.dump && docker cp $(docker-compose ps -q postgres):/tmp/schema.dump ./schema.dump",
     "openapi:generate": "docker-compose exec server curl -o src/openapi/openapi.json http://localhost:3000/openapi.json",
     "setup": "npm run install:server && npm run db:migrate && npm run db:generate",

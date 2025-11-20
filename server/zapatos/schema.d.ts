@@ -348,33 +348,33 @@ declare module 'zapatos/schema' {
       /**
       * **users.account_name**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_name: string | null;
+      account_name: string;
       /**
       * **users.account_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_number: string | null;
+      account_number: string;
       /**
       * **users.account_type**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_type: string | null;
+      account_type: string;
       /**
       * **users.contact_email**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_email: string | null;
+      contact_email: string;
       /**
       * **users.contact_phone**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_phone: string | null;
+      contact_phone: string;
       /**
       * **users.created_at**
       * - `timestamptz` in database
@@ -402,9 +402,9 @@ declare module 'zapatos/schema' {
       /**
       * **users.routing_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      routing_number: string | null;
+      routing_number: string;
       /**
       * **users.updated_at**
       * - `timestamptz` in database
@@ -416,33 +416,33 @@ declare module 'zapatos/schema' {
       /**
       * **users.account_name**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_name: string | null;
+      account_name: string;
       /**
       * **users.account_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_number: string | null;
+      account_number: string;
       /**
       * **users.account_type**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_type: string | null;
+      account_type: string;
       /**
       * **users.contact_email**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_email: string | null;
+      contact_email: string;
       /**
       * **users.contact_phone**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_phone: string | null;
+      contact_phone: string;
       /**
       * **users.created_at**
       * - `timestamptz` in database
@@ -470,9 +470,9 @@ declare module 'zapatos/schema' {
       /**
       * **users.routing_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      routing_number: string | null;
+      routing_number: string;
       /**
       * **users.updated_at**
       * - `timestamptz` in database
@@ -484,31 +484,31 @@ declare module 'zapatos/schema' {
       /**
       * **users.account_name**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
       account_name?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
       * **users.account_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
       account_number?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
       * **users.account_type**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
       account_type?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
       * **users.contact_email**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
       contact_email?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
       * **users.contact_phone**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
       contact_phone?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
@@ -538,7 +538,7 @@ declare module 'zapatos/schema' {
       /**
       * **users.routing_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
       routing_number?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
@@ -552,33 +552,33 @@ declare module 'zapatos/schema' {
       /**
       * **users.account_name**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_name?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      account_name: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **users.account_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_number?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      account_number: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **users.account_type**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_type?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      account_type: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **users.contact_email**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_email?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      contact_email: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **users.contact_phone**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_phone?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      contact_phone: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **users.created_at**
       * - `timestamptz` in database
@@ -606,9 +606,9 @@ declare module 'zapatos/schema' {
       /**
       * **users.routing_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      routing_number?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      routing_number: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **users.updated_at**
       * - `timestamptz` in database
@@ -620,33 +620,33 @@ declare module 'zapatos/schema' {
       /**
       * **users.account_name**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_name?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      account_name?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **users.account_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_number?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      account_number?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **users.account_type**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      account_type?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      account_type?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **users.contact_email**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_email?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      contact_email?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **users.contact_phone**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      contact_phone?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      contact_phone?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **users.created_at**
       * - `timestamptz` in database
@@ -674,9 +674,9 @@ declare module 'zapatos/schema' {
       /**
       * **users.routing_number**
       * - `text` in database
-      * - Nullable, no default
+      * - `NOT NULL`, no default
       */
-      routing_number?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      routing_number?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **users.updated_at**
       * - `timestamptz` in database
@@ -684,7 +684,7 @@ declare module 'zapatos/schema' {
       */
       updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
     }
-    export type UniqueIndex = 'users_email_key' | 'users_pkey';
+    export type UniqueIndex = 'users_account_name_key' | 'users_account_number_key' | 'users_contact_email_key' | 'users_contact_phone_key' | 'users_email_key' | 'users_pkey' | 'users_routing_number_key';
     export type Column = keyof Selectable;
     export type OnlyCols<T extends readonly Column[]> = Pick<Selectable, T[number]>;
     export type SQLExpression = Table | db.ColumnNames<Updatable | (keyof Updatable)[]> | db.ColumnValues<Updatable> | Whereable | Column | db.ParentColumn | db.GenericSQLExpression;

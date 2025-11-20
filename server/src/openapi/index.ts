@@ -58,10 +58,57 @@ export const openApiSpec = createDocument({
             description: 'Validation error',
           },
           '409': {
-            description: 'Email already exists',
+            description: 'User already exists',
           },
           '500': {
             description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/admin/users': {
+      get: {
+        summary: 'Get all users (admin only)',
+        description: 'Retrieve all user IDs and emails. Requires admin scope.',
+        tags: ['Admin'],
+        security: [{ BearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'List of users with IDs and emails',
+            content: {
+              'application/json': {
+                schema: z.array(
+                  z.object({
+                    id: z.string().uuid(),
+                    email: z.string().email(),
+                  })
+                ),
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden - Admin scope required',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema,
+              },
+            },
           },
         },
       },

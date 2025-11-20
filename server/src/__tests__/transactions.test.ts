@@ -254,10 +254,28 @@ describe('Transactions API', () => {
           destination_user_id: user2Id,
           amount: 10000,
         })
-        .expect(400);
+        .expect(404);
 
-      // Non-existent user will have 0 balance, so this will be insufficient funds
-      expect(response.body.error).toBe('Insufficient funds.');
+      // Non-existent user should return a user not found error
+      expect(response.body.error).toContain('User not found:');
+      expect(response.body.error).toContain(fakeUserId);
+    });
+
+    it('should handle non-existent destination user for transaction', async () => {
+      const fakeUserId = randomUUID();
+      const response = await request(app)
+        .post('/transactions')
+        .send({
+          idempotency_key: randomUUID(),
+          source_user_id: user1Id,
+          destination_user_id: fakeUserId,
+          amount: 10000,
+        })
+        .expect(404);
+
+      // Non-existent user should return a user not found error
+      expect(response.body.error).toContain('User not found:');
+      expect(response.body.error).toContain(fakeUserId);
     });
   });
 

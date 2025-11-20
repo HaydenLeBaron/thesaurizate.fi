@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gULsdEBPcnmJkhXoOiJDKBbDudjJ27bhxqCpaSBxsq2cJk3UKS5e9eRdiDmfff2
+\restrict yeahCnq9pBfcLnhtGarNTCvCykJhBHxgLBv2DQ5RdYQJxfDpf6fP0N20IHHNHH4
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -214,6 +214,38 @@ ALTER TABLE ONLY public.transactions
 
 
 --
+-- Name: users users_account_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_account_name_key UNIQUE (account_name);
+
+
+--
+-- Name: users users_account_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_account_number_key UNIQUE (account_number);
+
+
+--
+-- Name: users users_contact_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_contact_email_key UNIQUE (contact_email);
+
+
+--
+-- Name: users users_contact_phone_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_contact_phone_key UNIQUE (contact_phone);
+
+
+--
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -227,6 +259,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_routing_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_routing_number_key UNIQUE (routing_number);
 
 
 --
@@ -314,5 +354,5 @@ ALTER TABLE ONLY public.transactions
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gULsdEBPcnmJkhXoOiJDKBbDudjJ27bhxqCpaSBxsq2cJk3UKS5e9eRdiDmfff2
+\unrestrict yeahCnq9pBfcLnhtGarNTCvCykJhBHxgLBv2DQ5RdYQJxfDpf6fP0N20IHHNHH4
 

@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import * as db from 'zapatos/db';
+import { pool } from '../db';
 import { executeTransaction, executeDeposit, getUserBalance, getUserBalanceOnDate } from '../services/transactions';
 import { CreateTransactionSchema, CreateDepositSchema, UserIdPathSchema, BalanceQuerySchema } from '../schemas/transactions';
 
@@ -27,6 +29,8 @@ router.post('/transactions', async (req, res) => {
     } else if (error instanceof Error) {
       if (error.message === 'Insufficient funds.') {
         res.status(400).json({ error: error.message });
+      } else if (error.message.startsWith('User not found:')) {
+        res.status(404).json({ error: error.message });
       } else {
         console.error('Error creating transaction:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -45,6 +49,12 @@ router.get('/users/:id/balance', async (req, res) => {
   try {
     const validatedParams = UserIdPathSchema.parse(req.params);
     const validatedQuery = BalanceQuerySchema.parse(req.query);
+
+    // Check if user exists
+    const user = await db.selectOne('users', { id: validatedParams.id }).run(pool);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     let balance: number;
 

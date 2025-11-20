@@ -13,10 +13,16 @@ describe('OAuth 2.0 / OIDC API', () => {
     // Clean database before each test
     await pool.query('TRUNCATE TABLE transactions, users RESTART IDENTITY CASCADE');
 
-    // Create a test user
+    // Create a test user with all required fields
     const user = await db.insert('users', {
-      email: 'test@example.com',
+      account_name: 'Test User',
+      account_number: '1234567890',
+      account_type: 'personal',
+      contact_email: 'test@example.com',
       password_hash: 'hashed_password',
+      routing_number: '123456789',
+      contact_phone: '1234567890',
+      email: 'test@example.com',
     }).run(pool);
     testUserId = user.id;
     testUserEmail = user.email;

@@ -43,10 +43,86 @@
                         "description": "Validation error"
                     },
                     "409": {
-                        "description": "Email already exists"
+                        "description": "User already exists"
                     },
                     "500": {
                         "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "summary": "Get all users (admin only)",
+                "description": "Retrieve all user IDs and emails. Requires admin scope.",
+                "tags": [
+                    "Admin"
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of users with IDs and emails",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "format": "uuid",
+                                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "format": "email",
+                                                "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "email"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin scope required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -931,64 +1007,36 @@
                 "type": "object",
                 "properties": {
                     "account_number": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "description": "Account number",
+                        "example": "123456789",
+                        "type": "string"
                     },
                     "routing_number": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "description": "Bank routing number",
+                        "example": "987654321",
+                        "type": "string"
                     },
                     "account_type": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "description": "Account type (e.g., depository, checking, savings)",
+                        "example": "depository",
+                        "type": "string"
                     },
                     "contact_email": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "description": "Contact email address",
+                        "example": "contact@example.com",
+                        "type": "string",
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                     },
                     "contact_phone": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "description": "Contact phone number",
+                        "example": "+1234567890",
+                        "type": "string"
                     },
                     "account_name": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "description": "Account name",
+                        "example": "My Account",
+                        "type": "string"
                     },
                     "email": {
                         "description": "User email address",
@@ -1005,6 +1053,12 @@
                     }
                 },
                 "required": [
+                    "account_number",
+                    "routing_number",
+                    "account_type",
+                    "contact_email",
+                    "contact_phone",
+                    "account_name",
                     "email",
                     "password"
                 ]
@@ -1089,71 +1143,55 @@
                         "type": "string"
                     },
                     "account_number": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "routing_number": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "account_type": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "contact_email": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "contact_phone": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     },
                     "account_name": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ]
+                        "type": "string"
                     }
                 },
                 "required": [
                     "id",
                     "email",
                     "created_at",
-                    "updated_at"
+                    "updated_at",
+                    "account_number",
+                    "routing_number",
+                    "account_type",
+                    "contact_email",
+                    "contact_phone",
+                    "account_name"
+                ],
+                "additionalProperties": false
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "description": "Error code",
+                        "example": "invalid_request",
+                        "type": "string"
+                    },
+                    "error_description": {
+                        "description": "Human-readable error description",
+                        "example": "Invalid parameters",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "error",
+                    "error_description"
                 ],
                 "additionalProperties": false
             },
@@ -1224,26 +1262,6 @@
                 "required": [
                     "user_id",
                     "balance"
-                ],
-                "additionalProperties": false
-            },
-            "ErrorResponse": {
-                "type": "object",
-                "properties": {
-                    "error": {
-                        "description": "Error code",
-                        "example": "invalid_request",
-                        "type": "string"
-                    },
-                    "error_description": {
-                        "description": "Human-readable error description",
-                        "example": "Invalid parameters",
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "error",
-                    "error_description"
                 ],
                 "additionalProperties": false
             },

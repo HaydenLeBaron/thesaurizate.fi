@@ -37,7 +37,7 @@ describe('Error Handling Tests', () => {
         })
         .expect(409);
 
-      expect(response.body.error).toBe('Email already exists');
+      expect(response.body.error).toBe('User already exists');
     });
 
     it('should handle non-existent user gracefully for deposits', async () => {
