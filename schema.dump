@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict RVZJogjWml9GtLdhIOm1yVNcEAg3AkPqILjgs1uAQVxEVVdJsMcJNzfL5GpHRyg
+\restrict gULsdEBPcnmJkhXoOiJDKBbDudjJ27bhxqCpaSBxsq2cJk3UKS5e9eRdiDmfff2
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -163,12 +163,12 @@ CREATE TABLE public.users (
     password_hash text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    account_number text,
-    routing_number text,
-    account_type text,
-    contact_email text,
-    contact_phone text,
-    account_name text
+    account_number text NOT NULL,
+    routing_number text NOT NULL,
+    account_type text NOT NULL,
+    contact_email text NOT NULL,
+    contact_phone text NOT NULL,
+    account_name text NOT NULL
 );
 
 
@@ -314,5 +314,5 @@ ALTER TABLE ONLY public.transactions
 -- PostgreSQL database dump complete
 --
 
-\unrestrict RVZJogjWml9GtLdhIOm1yVNcEAg3AkPqILjgs1uAQVxEVVdJsMcJNzfL5GpHRyg
+\unrestrict gULsdEBPcnmJkhXoOiJDKBbDudjJ27bhxqCpaSBxsq2cJk3UKS5e9eRdiDmfff2
 
