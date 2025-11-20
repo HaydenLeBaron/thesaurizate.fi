@@ -96,6 +96,7 @@ Built with:
 - `npm run db:migrate:down` - Rollback the last migration
 - `npm run db:generate` - Generate Zapatos types and pgzod Zod schemas from database
 - `npm run db:migrate:generate` - Apply migrations and regenerate types
+- `npm run db:truncate:users` - **DEVELOPMENT ONLY**: Truncate all user data (⚠️ **NEVER run in staging or production** ⚠️)
 - `npm run setup` - Install server dependencies, generate types, and run migrations
 - `npm test` - Run Jest test suite (inside server container)
 - `npm run test:watch` - Run Jest tests in watch mode
@@ -109,6 +110,12 @@ Built with:
 
 **Check Migration Status:**
 - From host: `docker-compose exec postgres psql -U postgres -d thesaurum -c "SELECT name, run_on FROM pgmigrations ORDER BY run_on;"`
+
+**⚠️ Development Data Management:**
+- `npm run db:truncate:users` - **DEVELOPMENT ONLY**: Truncates the `users` table (cascades to `transactions` and `failed_transactions`)
+  - **⚠️ WARNING: This permanently deletes ALL user data! ⚠️**
+  - **⚠️ NEVER run this command in staging or production environments! ⚠️**
+  - Use only for local development when you need to reset test data
 
 ## Testing
 

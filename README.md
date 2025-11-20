@@ -130,6 +130,7 @@ To connect to the PostgreSQL database using an external tool like the [SQLTools 
 - `npm run db:migrate` - Run pending SQL migrations
 - `npm run db:migrate:down` - Rollback the last migration
 - `npm run db:migrate:generate` - Apply migrations and regenerate types
+- `npm run db:truncate:users` - **DEVELOPMENT ONLY**: Truncate all user data (⚠️ **NEVER run in staging or production** ⚠️)
 - `npm run dev` - Start docker-compose services
 - `npm run dev:build` - Rebuild and start services
 - `npm run down` - Stop docker-compose services
@@ -259,6 +260,12 @@ Tracks failed transaction attempts for debugging and recovery.
 - `npm run db:migrate` - Apply pending migrations
 - `npm run db:migrate:down` - Rollback last migration
 - `docker-compose exec postgres psql -U postgres -d thesaurum -c "SELECT name, run_on FROM pgmigrations ORDER BY run_on;"` - View migration status
+
+**⚠️ Development Data Management:**
+- `npm run db:truncate:users` - **DEVELOPMENT ONLY**: Truncates the `users` table (cascades to `transactions` and `failed_transactions`)
+  - **⚠️ WARNING: This permanently deletes ALL user data! ⚠️**
+  - **⚠️ NEVER run this command in staging or production environments! ⚠️**
+  - Use only for local development when you need to reset test data
 
 **Note**: Migrations use UTC timestamp-based filenames for proper ordering and to avoid conflicts.
 

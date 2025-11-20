@@ -402,6 +402,18 @@ npm run dev              # Start Docker services
 
 **Note**: Migration files use UTC timestamp-based naming (e.g., `20251006202559187_migration-name.sql`) to ensure proper ordering and avoid conflicts.
 
+### Development Data Management
+
+**⚠️ WARNING: Data Destruction Commands**
+
+The following command is available for local development only:
+
+- `npm run db:truncate:users` - Truncates the `users` table (cascades to `transactions` and `failed_transactions`)
+  - **⚠️ WARNING: This permanently deletes ALL user data! ⚠️**
+  - **⚠️ NEVER run this command in staging or production environments! ⚠️**
+  - Use only for local development when you need to reset test data
+  - The CASCADE option will also delete all related transactions and failed transaction records
+
 ### Available Commands
 
 #### Root Package Scripts
@@ -409,8 +421,10 @@ npm run dev              # Start Docker services
 - `npm run dev:build` → Rebuild containers and start
 - `npm run down` → Stop all services
 - `npm run db:migrate` → Apply pending migrations
+- `npm run db:migrate:down` → Rollback last migration
 - `npm run db:generate` → Regenerate Zapatos types + pgzod schemas
 - `npm run db:migrate:generate` → Apply migrations and regenerate types
+- `npm run db:truncate:users` → **DEVELOPMENT ONLY**: Truncate all user data (⚠️ **NEVER run in staging or production** ⚠️)
 - `npm run setup` → Full setup from scratch
 - `npm test` → Run Jest test suite
 - `npm run test:watch` → Run tests in watch mode
