@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { oauthServer } from '../services/oauth-server';
+import jwt from 'jsonwebtoken';
+import { authConfig } from '../config/auth';
 
 export interface AuthenticatedRequest extends Request {
     user?: {
@@ -10,34 +12,55 @@ export interface AuthenticatedRequest extends Request {
 
 /**
  * Middleware to authenticate requests using Bearer token
- * Uses express-oauth-server to verify tokens
+ * Uses express-oauth-server to verify tokens, with fallback to direct JWT verification
  */
 export function authenticateToken(
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ): void {
-    // Use oauthServer.authenticate() middleware
-    oauthServer.authenticate()(req, res, (err?: any) => {
-        if (err) {
+    // Extract token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({
+            error: 'unauthorized',
+            error_description: 'Missing authorization header',
+        });
+        return;
+    }
+
+    const token = authHeader.substring(7);
+
+    try {
+        // Verify JWT token directly
+        const decoded = jwt.verify(token, authConfig.jwtSecret) as any;
+        
+        // Extract user ID from token (sub claim contains user ID)
+        const userId = decoded.sub;
+        const scope = decoded.scope || '';
+        
+        if (!userId) {
             res.status(401).json({
                 error: 'unauthorized',
-                error_description: err.message || 'Invalid or expired token',
+                error_description: 'Invalid token: missing user ID',
             });
             return;
         }
 
-        // Extract user info from oauth token
-        if ((req as any).oauth?.token) {
-            const token = (req as any).oauth.token;
-            req.user = {
-                userId: token.user?.id || token.userId || '',
-                scopes: token.scope?.split(' ') || [],
-            };
-        }
+        // Set user info on request
+        req.user = {
+            userId: userId,
+            scopes: scope.split(' ').filter((s: string) => s.length > 0),
+        };
 
         next();
-    });
+    } catch (error) {
+        res.status(401).json({
+            error: 'unauthorized',
+            error_description: error instanceof Error ? error.message : 'Invalid or expired token',
+        });
+        return;
+    }
 }
 
 /**

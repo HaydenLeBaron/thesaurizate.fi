@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { oauthServer } from '../services/oauth-server';
 import { authConfig } from '../config/auth';
 import * as db from 'zapatos/db';
@@ -12,7 +12,34 @@ const router = Router();
  * OAuth 2.0 token endpoint
  * Uses express-oauth-server to handle token requests
  */
-router.post('/token', oauthServer.token());
+router.post('/token', (req, res, next) => {
+  console.log('[OAuth Token] Request body:', req.body);
+  oauthServer.token()(req, res, (err: any) => {
+    if (err) {
+      console.error('[OAuth Token] Error:', err.name, err.message, err);
+      // Handle OAuth errors
+      if (err.name === 'invalid_client' || err.name === 'unauthorized_client') {
+        return res.status(401).json({
+          error: err.name || 'invalid_client',
+          error_description: err.message,
+        });
+      }
+      if (err.name === 'invalid_request' || err.name === 'invalid_grant') {
+        return res.status(400).json({
+          error: err.name || 'invalid_request',
+          error_description: err.message,
+        });
+      }
+      // Unknown error - log it
+      console.error('[OAuth Token] Unknown error:', err);
+      return res.status(err.status || 500).json({
+        error: 'server_error',
+        error_description: err.message,
+      });
+    }
+    // Success - response already sent by express-oauth-server
+  });
+});
 
 /**
  * POST /oauth/authorize

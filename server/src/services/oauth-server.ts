@@ -7,7 +7,7 @@ import { oauthModel } from './oauth-model';
  */
 export const oauthServer = new ExpressOAuthServer({
   model: oauthModel,
-  useErrorHandler: false, // We'll handle errors ourselves
+  useErrorHandler: false, // Handle errors in routes
   continueMiddleware: false,
 });
 

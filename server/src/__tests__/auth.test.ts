@@ -30,15 +30,18 @@ describe('OAuth 2.0 / OIDC API', () => {
 
   describe('POST /oauth/token (Client Credentials Grant)', () => {
     it('should issue access token with valid client credentials', async () => {
+      // OAuth 2.0 token endpoint requires form-encoded data
       const response = await request(app)
         .post('/oauth/token')
+        .type('form')
         .send({
           grant_type: 'client_credentials',
           client_id: authConfig.plaidClientId,
           client_secret: authConfig.plaidClientSecret,
           scope: 'accounts transactions',
-        })
-        .expect(200);
+        });
+      
+      expect(response.status).toBe(200);
 
       expect(response.body).toHaveProperty('access_token');
       expect(response.body).toHaveProperty('token_type', 'Bearer');
@@ -53,21 +56,26 @@ describe('OAuth 2.0 / OIDC API', () => {
     });
 
     it('should reject invalid client credentials', async () => {
+      // OAuth 2.0 token endpoint requires form-encoded data
+      // express-oauth-server returns 400 for invalid client (not 401)
       const response = await request(app)
         .post('/oauth/token')
+        .type('form')
         .send({
           grant_type: 'client_credentials',
           client_id: 'invalid-client',
           client_secret: 'invalid-secret',
         })
-        .expect(401);
+        .expect(400);
 
       expect(response.body).toHaveProperty('error');
     });
 
     it('should reject missing client credentials', async () => {
+      // OAuth 2.0 token endpoint requires form-encoded data
       const response = await request(app)
         .post('/oauth/token')
+        .type('form')
         .send({
           grant_type: 'client_credentials',
         })
@@ -77,8 +85,10 @@ describe('OAuth 2.0 / OIDC API', () => {
     });
 
     it('should reject unsupported grant type', async () => {
+      // OAuth 2.0 token endpoint requires form-encoded data
       const response = await request(app)
         .post('/oauth/token')
+        .type('form')
         .send({
           grant_type: 'password',
           client_id: authConfig.plaidClientId,

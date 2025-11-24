@@ -330,7 +330,8 @@ describe('Plaid Core Exchange API', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('accountId', testUser2Id);
-      expect(response.body).toHaveProperty('email', 'user2@example.com');
+      // contact_email takes precedence over email
+      expect(response.body).toHaveProperty('email', 'contact2@example.com');
     });
 
     it('should reject access to other user\'s contact info', async () => {

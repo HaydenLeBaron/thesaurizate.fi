@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-// FIXME: Re-enable authentication middleware in production
-// import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import {
   getAccountsForUser,
   getAccountDetails,
@@ -16,27 +15,26 @@ import {
 
 const router = Router();
 
-// FIXME: Re-enable authentication middleware in production
-// All routes require authentication
-// router.use(authenticateToken);
+// All /accounts routes require authentication
+// Apply auth middleware only to routes that start with /accounts
+router.use('/accounts', authenticateToken);
 
 /**
  * GET /accounts
  * List all accounts for authenticated user
  */
-router.get('/accounts', async (req: Request, res: Response) => {
+router.get('/accounts', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // FIXME: Re-enable authentication check in production
-    // if (!req.user) {
-    //   res.status(401).json({
-    //     error: 'unauthorized',
-    //     error_description: 'Authentication required',
-    //   });
-    //   return;
-    // }
+    if (!req.user) {
+      res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Authentication required',
+      });
+      return;
+    }
 
-    // For now, use a default user ID or get from query param
-    const userId = (req.query.userId as string) || 'service-account';
+    // Use authenticated user's ID
+    const userId = req.user.userId;
     const accounts = await getAccountsForUser(userId);
     res.json(accounts);
   } catch (error) {
@@ -52,28 +50,26 @@ router.get('/accounts', async (req: Request, res: Response) => {
  * GET /accounts/:accountId
  * Get detailed account information
  */
-router.get('/accounts/:accountId', async (req: Request, res: Response) => {
+router.get('/accounts/:accountId', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // FIXME: Re-enable authentication checks in production
-    // if (!req.user) {
-    //   res.status(401).json({
-    //     error: 'unauthorized',
-    //     error_description: 'Authentication required',
-    //   });
-    //   return;
-    // }
+    if (!req.user) {
+      res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Authentication required',
+      });
+      return;
+    }
 
     const validatedParams = AccountIdPathSchema.parse(req.params);
 
-    // FIXME: Re-enable user ownership verification in production
     // Verify user owns this account
-    // if (validatedParams.accountId !== req.user.userId) {
-    //   res.status(403).json({
-    //     error: 'forbidden',
-    //     error_description: 'Access denied to this account',
-    //   });
-    //   return;
-    // }
+    if (validatedParams.accountId !== req.user.userId) {
+      res.status(403).json({
+        error: 'forbidden',
+        error_description: 'Access denied to this account',
+      });
+      return;
+    }
 
     const account = await getAccountDetails(validatedParams.accountId);
     res.json(account);
@@ -107,29 +103,27 @@ router.get('/accounts/:accountId', async (req: Request, res: Response) => {
  * GET /accounts/:accountId/transactions
  * Get transaction history for account
  */
-router.get('/accounts/:accountId/transactions', async (req: Request, res: Response) => {
+router.get('/accounts/:accountId/transactions', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // FIXME: Re-enable authentication checks in production
-    // if (!req.user) {
-    //   res.status(401).json({
-    //     error: 'unauthorized',
-    //     error_description: 'Authentication required',
-    //   });
-    //   return;
-    // }
+    if (!req.user) {
+      res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Authentication required',
+      });
+      return;
+    }
 
     const validatedParams = AccountIdPathSchema.parse(req.params);
     const validatedQuery = TransactionQuerySchema.parse(req.query);
 
-    // FIXME: Re-enable user ownership verification in production
     // Verify user owns this account
-    // if (validatedParams.accountId !== req.user.userId) {
-    //   res.status(403).json({
-    //     error: 'forbidden',
-    //     error_description: 'Access denied to this account',
-    //   });
-    //   return;
-    // }
+    if (validatedParams.accountId !== req.user.userId) {
+      res.status(403).json({
+        error: 'forbidden',
+        error_description: 'Access denied to this account',
+      });
+      return;
+    }
 
     const transactions = await getAccountTransactions(validatedParams.accountId, {
       limit: validatedQuery.limit,
@@ -169,28 +163,26 @@ router.get('/accounts/:accountId/transactions', async (req: Request, res: Respon
  * GET /accounts/:accountId/payment-networks
  * Get payment network information
  */
-router.get('/accounts/:accountId/payment-networks', async (req: Request, res: Response) => {
+router.get('/accounts/:accountId/payment-networks', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // FIXME: Re-enable authentication checks in production
-    // if (!req.user) {
-    //   res.status(401).json({
-    //     error: 'unauthorized',
-    //     error_description: 'Authentication required',
-    //   });
-    //   return;
-    // }
+    if (!req.user) {
+      res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Authentication required',
+      });
+      return;
+    }
 
     const validatedParams = AccountIdPathSchema.parse(req.params);
 
-    // FIXME: Re-enable user ownership verification in production
     // Verify user owns this account
-    // if (validatedParams.accountId !== req.user.userId) {
-    //   res.status(403).json({
-    //     error: 'forbidden',
-    //     error_description: 'Access denied to this account',
-    //   });
-    //   return;
-    // }
+    if (validatedParams.accountId !== req.user.userId) {
+      res.status(403).json({
+        error: 'forbidden',
+        error_description: 'Access denied to this account',
+      });
+      return;
+    }
 
     const paymentNetworks = await getPaymentNetworks(validatedParams.accountId);
     res.json(paymentNetworks);
@@ -224,28 +216,26 @@ router.get('/accounts/:accountId/payment-networks', async (req: Request, res: Re
  * GET /accounts/:accountId/contact
  * Get contact information for account
  */
-router.get('/accounts/:accountId/contact', async (req: Request, res: Response) => {
+router.get('/accounts/:accountId/contact', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // FIXME: Re-enable authentication checks in production
-    // if (!req.user) {
-    //   res.status(401).json({
-    //     error: 'unauthorized',
-    //     error_description: 'Authentication required',
-    //   });
-    //   return;
-    // }
+    if (!req.user) {
+      res.status(401).json({
+        error: 'unauthorized',
+        error_description: 'Authentication required',
+      });
+      return;
+    }
 
     const validatedParams = AccountIdPathSchema.parse(req.params);
 
-    // FIXME: Re-enable user ownership verification in production
     // Verify user owns this account
-    // if (validatedParams.accountId !== req.user.userId) {
-    //   res.status(403).json({
-    //     error: 'forbidden',
-    //     error_description: 'Access denied to this account',
-    //   });
-    //   return;
-    // }
+    if (validatedParams.accountId !== req.user.userId) {
+      res.status(403).json({
+        error: 'forbidden',
+        error_description: 'Access denied to this account',
+      });
+      return;
+    }
 
     const contact = await getAccountContact(validatedParams.accountId);
     res.json(contact);

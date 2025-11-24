@@ -207,5 +207,25 @@ export const oauthModel = {
     // Refresh tokens not implemented for now
     return null;
   },
+
+  /**
+   * Validate scope (required by oauth2-server)
+   */
+  validateScope: async (user: any, client: OAuthClient, scope: string): Promise<string | null> => {
+    // For now, accept any scope
+    // In production, validate against user permissions
+    return scope || null;
+  },
+
+  /**
+   * Validate redirect URI (required by oauth2-server for authorization_code grant)
+   */
+  validateRedirectUri: async (redirectUri: string, client: OAuthClient): Promise<boolean> => {
+    // Check if redirect URI is in client's allowed list
+    if (!client.redirectUris || client.redirectUris.length === 0) {
+      return false;
+    }
+    return client.redirectUris.includes(redirectUri);
+  },
 };
 

@@ -34,7 +34,7 @@ app.use('/', transactionsRouter);
 app.use('/', usersRouter);
 app.use('/oauth', authRouter);
 app.use('/.well-known', wellKnownRouter);
-app.use('/', plaidRouter);
+app.use('/', plaidRouter); // Plaid routes are already prefixed with /accounts
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

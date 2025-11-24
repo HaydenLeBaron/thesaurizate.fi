@@ -76,14 +76,14 @@ describe('Plaid Service', () => {
       await expect(getAccountsForUser(nonExistentId)).rejects.toThrow('User not found');
     });
 
-    it('should return default values for user without Plaid fields', async () => {
+    it('should return values for user with Plaid fields', async () => {
       const accounts = await getAccountsForUser(testUser2Id);
 
       expect(accounts.length).toBe(1);
       expect(accounts[0].accountType).toBe('depository');
-      expect(accounts[0].accountName).toBeNull();
-      expect(accounts[0].routingNumber).toBeNull();
-      expect(accounts[0].accountNumber).toBeNull();
+      expect(accounts[0].accountName).toBe('Test Account 2');
+      expect(accounts[0].routingNumber).toBe('123456789');
+      expect(accounts[0].accountNumber).toBe('987654321');
     });
   });
 
@@ -219,13 +219,14 @@ describe('Plaid Service', () => {
       expect(contact).toHaveProperty('name', 'Test Account');
     });
 
-    it('should return contact info with fallback to user email', async () => {
+    it('should return contact info with contact_email when available', async () => {
       const contact = await getAccountContact(testUser2Id);
 
       expect(contact).toHaveProperty('accountId', testUser2Id);
-      expect(contact).toHaveProperty('email', 'user2@example.com');
-      expect(contact.phone).toBeNull();
-      expect(contact.name).toBeNull();
+      // contact_email takes precedence over email
+      expect(contact).toHaveProperty('email', 'contact2@example.com');
+      expect(contact.phone).toBe('+1987654321');
+      expect(contact.name).toBe('Test Account 2');
     });
 
     it('should throw error for non-existent account', async () => {
