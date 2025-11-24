@@ -1053,12 +1053,6 @@
                     }
                 },
                 "required": [
-                    "account_number",
-                    "routing_number",
-                    "account_type",
-                    "contact_email",
-                    "contact_phone",
-                    "account_name",
                     "email",
                     "password"
                 ]
