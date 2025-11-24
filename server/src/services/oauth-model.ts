@@ -71,30 +71,24 @@ export const oauthModel = {
    * We should validate both and return null if either doesn't match.
    */
   getClient: async (clientId: string, clientSecret?: string): Promise<OAuthClient | null> => {
-    console.log('[getClient] Called with:', { clientId, hasSecret: !!clientSecret, expectedId: authConfig.plaidClientId });
-
     // If clientId doesn't match, return null
     if (clientId !== authConfig.plaidClientId) {
-      console.log('[getClient] ClientId mismatch');
       return null;
     }
 
     // Validate clientSecret - it must be provided and must match
     if (!clientSecret || clientSecret !== authConfig.plaidClientSecret) {
-      console.log('[getClient] ClientSecret mismatch or missing');
       return null;
     }
 
     // Return client with grants
-    const client = {
+    return {
       id: 'plaid-client',
       clientId: authConfig.plaidClientId,
       clientSecret: authConfig.plaidClientSecret,
       grants: ['client_credentials', 'authorization_code'],
       redirectUris: [process.env.PLAID_REDIRECT_URI || 'http://localhost:3000/oauth/callback'],
     };
-    console.log('[getClient] Returning client:', client.id);
-    return client;
   },
 
   /**
@@ -120,6 +114,8 @@ export const oauthModel = {
       ...token,
       accessToken,
       accessTokenExpiresAt: new Date((now + authConfig.accessTokenExpiration) * 1000),
+      client,
+      user,
     };
   },
 
@@ -148,18 +144,14 @@ export const oauthModel = {
    * For client credentials flow, we return a service account user
    */
   getUserFromClient: async (client: OAuthClient): Promise<any> => {
-    console.log('[getUserFromClient] Called with client:', client?.id);
     if (!client) {
-      console.log('[getUserFromClient] Client is null!');
       throw new Error('Client is required');
     }
     // For client credentials, return a service account user
-    const user = {
+    return {
       id: 'service-account',
       email: 'service@thesaurum.local',
     };
-    console.log('[getUserFromClient] Returning user:', user.id);
-    return user;
   },
 
   /**

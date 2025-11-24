@@ -13,10 +13,8 @@ const router = Router();
  * Uses express-oauth-server to handle token requests
  */
 router.post('/token', (req, res, next) => {
-  console.log('[OAuth Token] Request body:', req.body);
   oauthServer.token()(req, res, (err: any) => {
     if (err) {
-      console.error('[OAuth Token] Error:', err.name, err.message, err);
       // Handle OAuth errors
       if (err.name === 'invalid_client' || err.name === 'unauthorized_client') {
         return res.status(401).json({
@@ -34,7 +32,7 @@ router.post('/token', (req, res, next) => {
       console.error('[OAuth Token] Unknown error:', err);
       return res.status(err.status || 500).json({
         error: 'server_error',
-        error_description: err.message,
+        error_description: err.message || String(err),
       });
     }
     // Success - response already sent by express-oauth-server
