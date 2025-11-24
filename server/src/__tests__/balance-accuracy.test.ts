@@ -66,7 +66,8 @@ describe('Balance Calculation Accuracy Tests', () => {
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
-        });
+        })
+        .expect(201);
 
       await request(app)
         .post('/transactions')
@@ -75,7 +76,8 @@ describe('Balance Calculation Accuracy Tests', () => {
           source_user_id: user1Id,
           destination_user_id: user2Id,
           amount: 3000,
-        });
+        })
+        .expect(201);
 
       const balance = await request(app).get(`/users/${user1Id}/balance`);
       expect(balance.body.balance).toBe(7000);

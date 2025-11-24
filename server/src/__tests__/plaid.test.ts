@@ -31,6 +31,12 @@ describe('Plaid Core Exchange API', () => {
     const user2 = await db.insert('users', {
       email: 'user2@example.com',
       password_hash: 'hashed_password',
+      account_number: '987654321',
+      routing_number: '123456789',
+      account_type: 'depository',
+      account_name: 'Test Account 2',
+      contact_email: 'contact2@example.com',
+      contact_phone: '+1987654321',
     }).run(pool);
     testUser2Id = user2.id;
 

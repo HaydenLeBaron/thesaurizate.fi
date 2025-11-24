@@ -65,10 +65,10 @@ describe('Error Handling Tests', () => {
           destination_user_id: userId,
           amount: 1000,
         })
-        .expect(400);
+        .expect(404);
 
-      // Should fail due to insufficient funds (0 balance for non-existent user)
-      expect(response.body.error).toBe('Insufficient funds.');
+      // Should fail due to user not found
+      expect(response.body.error).toContain('User not found:');
     });
 
     it('should handle non-existent destination user in transaction', async () => {
@@ -77,7 +77,8 @@ describe('Error Handling Tests', () => {
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
-        });
+        })
+        .expect(201);
 
       const fakeUserId = randomUUID();
 
@@ -89,9 +90,9 @@ describe('Error Handling Tests', () => {
           destination_user_id: fakeUserId,
           amount: 1000,
         })
-        .expect(500);
+        .expect(404);
 
-      expect(response.body.error).toBe('Internal server error');
+      expect(response.body.error).toContain('User not found:');
     });
   });
 

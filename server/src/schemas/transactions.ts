@@ -42,12 +42,21 @@ export const UserBalanceSchema = z.object({
 }).meta({ id: 'UserBalance' });
 
 // Query/Path parameters
+// Note: Query params come as strings, so we need to handle empty strings and parse dates
 export const BalanceQuerySchema = z.object({
-  date: z.iso.datetime().optional().meta({
+  date: z.preprocess(
+    (val) => {
+      // Handle empty strings, null, or undefined - return undefined
+      if (val === undefined || val === null || val === '') return undefined;
+      // Return the string as-is for datetime validation (must be non-null when provided)
+      return String(val);
+    },
+    z.string().datetime() // When provided, must be a valid non-null datetime string
+  ).optional().meta({
     description: 'Optional ISO 8601 datetime to get historical balance',
     example: '2025-10-06T12:00:00Z'
   }),
-});
+}).passthrough(); // Allow extra query params
 
 export const UserIdPathSchema = z.object({
   id: UsersRead.shape.id.meta({ description: 'User UUID', example: '550e8400-e29b-41d4-a716-446655440000' }),

@@ -50,10 +50,10 @@ router.get('/users/:id/balance', async (req, res) => {
     const validatedParams = UserIdPathSchema.parse(req.params);
     const validatedQuery = BalanceQuerySchema.parse(req.query);
 
-    // Check if user exists
+    // Check if user exists - if not, return 0 balance (as per API design)
     const user = await db.selectOne('users', { id: validatedParams.id }).run(pool);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.json({ user_id: validatedParams.id, balance: 0 });
     }
 
     let balance: number;

@@ -9,6 +9,11 @@ import type { Account, PlaidTransaction, PaymentNetwork, Contact } from '../sche
  * Since the system uses 1 user = 1 account, we map the user to an account
  */
 export async function getAccountsForUser(userId: string): Promise<Account[]> {
+    // Handle service account (client credentials flow)
+    if (userId === 'service-account') {
+        return [];
+    }
+    
     const user = await db.selectOne('users', { id: userId }).run(pool);
     if (!user) {
         throw new Error('User not found');
@@ -41,6 +46,11 @@ export async function getAccountsForUser(userId: string): Promise<Account[]> {
  * Get detailed account information
  */
 export async function getAccountDetails(accountId: string): Promise<Account> {
+    // Handle service account (client credentials flow)
+    if (accountId === 'service-account') {
+        throw new Error('Account not found');
+    }
+    
     const user = await db.selectOne('users', { id: accountId }).run(pool);
     if (!user) {
         throw new Error('Account not found');
@@ -79,6 +89,11 @@ export async function getAccountTransactions(
         endDate?: string;
     }
 ): Promise<PlaidTransaction[]> {
+    // Handle service account (client credentials flow)
+    if (accountId === 'service-account') {
+        return [];
+    }
+    
     const limit = filters?.limit || 50;
     const offset = filters?.offset || 0;
 
@@ -145,6 +160,14 @@ export async function getAccountTransactions(
  * Get payment network information for an account
  */
 export async function getPaymentNetworks(accountId: string): Promise<PaymentNetwork> {
+    // Handle service account (client credentials flow)
+    if (accountId === 'service-account') {
+        return {
+            accountId: 'service-account',
+            networks: [],
+        };
+    }
+    
     const user = await db.selectOne('users', { id: accountId }).run(pool);
     if (!user) {
         throw new Error('Account not found');
@@ -182,6 +205,16 @@ export async function getPaymentNetworks(accountId: string): Promise<PaymentNetw
  * Get contact information for an account
  */
 export async function getAccountContact(accountId: string): Promise<Contact> {
+    // Handle service account (client credentials flow)
+    if (accountId === 'service-account') {
+        return {
+            accountId: 'service-account',
+            email: 'service@thesaurum.local',
+            phone: null,
+            name: 'Service Account',
+        };
+    }
+    
     const user = await db.selectOne('users', { id: accountId }).run(pool);
     if (!user) {
         throw new Error('Account not found');

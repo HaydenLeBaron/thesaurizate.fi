@@ -13,6 +13,12 @@ describe('OAuth Model', () => {
     const user = await db.insert('users', {
       email: 'test@example.com',
       password_hash: 'hashed_password',
+      account_number: '111222333',
+      routing_number: '444555666',
+      account_type: 'depository',
+      account_name: 'Test Account',
+      contact_email: 'test@example.com',
+      contact_phone: '+1555555555',
     }).run(pool);
     testUserId = user.id;
   });

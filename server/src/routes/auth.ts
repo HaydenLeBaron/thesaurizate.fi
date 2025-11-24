@@ -48,6 +48,17 @@ router.get('/userinfo', async (req: Request, res: Response) => {
         const decoded = jwt.verify(token, authConfig.jwtSecret) as any;
         const userId = decoded.sub;
 
+        // Handle service account (client credentials flow)
+        if (userId === 'service-account') {
+            res.json({
+                sub: 'service-account',
+                email: 'service@thesaurum.local',
+                email_verified: true,
+                name: 'Service Account',
+            });
+            return;
+        }
+
         // Get user info
         const user = await db.selectOne('users', { id: userId }).run(pool);
         if (!user) {
