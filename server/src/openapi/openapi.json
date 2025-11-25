@@ -12,7 +12,7 @@
         }
     ],
     "paths": {
-        "/accounts": {
+        "/v1/accounts": {
             "post": {
                 "summary": "Create a new account",
                 "description": "Register a new account account",
@@ -51,7 +51,46 @@
                 }
             }
         },
-        "/transactions": {
+        "/v1/users": {
+            "post": {
+                "summary": "Create a new user",
+                "description": "Register a new user account",
+                "tags": [
+                    "Users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUser"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "409": {
+                        "description": "Email already exists"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/v1/transactions": {
             "post": {
                 "summary": "Create a new transaction",
                 "description": "Execute a financial transfer between two accounts with JIT balance verification",
@@ -87,7 +126,7 @@
                 }
             }
         },
-        "/accounts/{id}/balance": {
+        "/v1/accounts/{id}/balance": {
             "get": {
                 "summary": "Get account balance",
                 "description": "Get current balance or historical balance at a specific date",
@@ -141,7 +180,7 @@
                 }
             }
         },
-        "/accounts/{id}/transactions": {
+        "/v1/accounts/{id}/transactions": {
             "get": {
                 "summary": "Get account transaction history",
                 "description": "Get all transactions where account is source or destination",
@@ -186,7 +225,7 @@
                 }
             }
         },
-        "/accounts/{id}/deposit": {
+        "/v1/accounts/{id}/deposit": {
             "post": {
                 "summary": "Deposit money into account account",
                 "description": "Inject money into the system by depositing funds into a account account",
@@ -237,6 +276,42 @@
                 }
             }
         },
+        "/v2/ping": {
+            "get": {
+                "summary": "Ping endpoint",
+                "description": "Simple ping endpoint for version 2 API",
+                "tags": [
+                    "System"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ping successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "example": "ok",
+                                            "type": "string"
+                                        },
+                                        "version": {
+                                            "example": "v2",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "version"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "summary": "Health check",
@@ -266,6 +341,309 @@
                     }
                 }
             }
+        },
+        "/v2/accounts": {
+            "get": {
+                "summary": "Search and view customer accounts",
+                "description": "List all customer accounts with pagination",
+                "tags": [
+                    "V2 Accounts"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "description": "Maximum number of accounts to return",
+                            "example": 100,
+                            "default": 100,
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 500
+                        },
+                        "description": "Maximum number of accounts to return"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "description": "Number of accounts to skip",
+                            "example": 0,
+                            "default": 0,
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                        },
+                        "description": "Number of accounts to skip"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of accounts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AccountListItem"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/v2/accounts/{accountId}": {
+            "get": {
+                "summary": "Get account balances, liabilities, and other information",
+                "description": "Get account details including balance, liabilities, and metadata",
+                "tags": [
+                    "V2 Accounts"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "accountId",
+                        "schema": {
+                            "description": "Account UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "required": true,
+                        "description": "Account UUID"
+                    },
+                    {
+                        "in": "query",
+                        "name": "date",
+                        "schema": {
+                            "description": "Optional ISO 8601 datetime to get historical balance",
+                            "example": "2025-10-06T12:00:00Z",
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "description": "Optional ISO 8601 datetime to get historical balance"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Account with balance information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountWithBalance"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "404": {
+                        "description": "Account not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/v2/accounts/{accountId}/contact": {
+            "get": {
+                "summary": "Get account contact information",
+                "description": "Get contact information for an account",
+                "tags": [
+                    "V2 Accounts"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "accountId",
+                        "schema": {
+                            "description": "Account UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "required": true,
+                        "description": "Account UUID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Account contact information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountContact"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "404": {
+                        "description": "Account or user not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/v2/accounts/{accountId}/transactions": {
+            "get": {
+                "summary": "List all account transactions",
+                "description": "Get all transactions for an account with optional filtering and pagination",
+                "tags": [
+                    "V2 Transactions"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "accountId",
+                        "schema": {
+                            "description": "Account UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "required": true,
+                        "description": "Account UUID"
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "description": "Maximum number of transactions to return",
+                            "example": 100,
+                            "default": 100,
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 500
+                        },
+                        "description": "Maximum number of transactions to return"
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "schema": {
+                            "description": "Number of transactions to skip",
+                            "example": 0,
+                            "default": 0,
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                        },
+                        "description": "Number of transactions to skip"
+                    },
+                    {
+                        "in": "query",
+                        "name": "startDate",
+                        "schema": {
+                            "description": "Start date for filtering transactions (ISO 8601)",
+                            "example": "2025-10-01T00:00:00Z",
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "description": "Start date for filtering transactions (ISO 8601)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "endDate",
+                        "schema": {
+                            "description": "End date for filtering transactions (ISO 8601)",
+                            "example": "2025-10-31T23:59:59Z",
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "description": "End date for filtering transactions (ISO 8601)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of transactions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/V2Transaction"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "404": {
+                        "description": "Account not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
+        "/v2/accounts/{accountId}/payment-networks": {
+            "get": {
+                "summary": "Get payment networks supported by an account",
+                "description": "Get list of payment networks (e.g., ACH, WIRE) supported by an account",
+                "tags": [
+                    "V2 Accounts"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "accountId",
+                        "schema": {
+                            "description": "Account UUID",
+                            "example": "550e8400-e29b-41d4-a716-446655440000",
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "required": true,
+                        "description": "Account UUID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment networks for account",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentNetworksResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (validation error)"
+                    },
+                    "404": {
+                        "description": "Account not found"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -281,6 +659,28 @@
                 },
                 "required": [
                     "user_id"
+                ]
+            },
+            "CreateUser": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "description": "User email address",
+                        "example": "user@example.com",
+                        "type": "string",
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    },
+                    "password": {
+                        "description": "User password (min 8 characters)",
+                        "example": "mySecurePass123",
+                        "type": "string",
+                        "minLength": 8
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
                 ]
             },
             "CreateTransaction": {
@@ -373,6 +773,32 @@
                 ],
                 "additionalProperties": false
             },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "email",
+                    "created_at",
+                    "updated_at"
+                ],
+                "additionalProperties": false
+            },
             "Transaction": {
                 "type": "object",
                 "properties": {
@@ -440,6 +866,308 @@
                 "required": [
                     "account_id",
                     "balance"
+                ],
+                "additionalProperties": false
+            },
+            "AccountListItem": {
+                "type": "object",
+                "properties": {
+                    "accountId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "userId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    }
+                },
+                "required": [
+                    "accountId",
+                    "userId",
+                    "createdAt",
+                    "updatedAt"
+                ],
+                "additionalProperties": false
+            },
+            "AccountWithBalance": {
+                "type": "object",
+                "properties": {
+                    "accountId": {
+                        "description": "Account UUID",
+                        "example": "550e8400-e29b-41d4-a716-446655440000",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "balance": {
+                        "type": "object",
+                        "properties": {
+                            "available": {
+                                "description": "Available balance in cents",
+                                "example": 50000,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                            },
+                            "current": {
+                                "description": "Current balance in cents",
+                                "example": 50000,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                            },
+                            "limit": {
+                                "description": "Account limit in cents (null if no limit)",
+                                "example": null,
+                                "anyOf": [
+                                    {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            }
+                        },
+                        "required": [
+                            "available",
+                            "current",
+                            "limit"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "liabilities": {
+                        "type": "object",
+                        "properties": {
+                            "credit": {
+                                "description": "Credit liability in cents",
+                                "example": 0,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                            },
+                            "mortgage": {
+                                "description": "Mortgage liability in cents",
+                                "example": 0,
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                            }
+                        },
+                        "required": [
+                            "credit",
+                            "mortgage"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "properties": {
+                            "createdAt": {
+                                "description": "Account creation timestamp",
+                                "example": "2025-10-06T12:00:00Z",
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            "updatedAt": {
+                                "description": "Account last update timestamp",
+                                "example": "2025-10-06T12:00:00Z",
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            }
+                        },
+                        "required": [
+                            "createdAt",
+                            "updatedAt"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [
+                    "accountId",
+                    "balance",
+                    "liabilities",
+                    "metadata"
+                ],
+                "additionalProperties": false
+            },
+            "AccountContact": {
+                "type": "object",
+                "properties": {
+                    "accountId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "contact": {
+                        "type": "object",
+                        "properties": {
+                            "email": {
+                                "description": "Contact email address",
+                                "example": "user@example.com",
+                                "type": "string"
+                            },
+                            "userId": {
+                                "description": "User UUID",
+                                "example": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            }
+                        },
+                        "required": [
+                            "email",
+                            "userId"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [
+                    "accountId",
+                    "contact"
+                ],
+                "additionalProperties": false
+            },
+            "V2Transaction": {
+                "type": "object",
+                "properties": {
+                    "transactionId": {
+                        "description": "Transaction UUID",
+                        "example": "550e8400-e29b-41d4-a716-446655440000",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "idempotencyKey": {
+                        "description": "Idempotency key",
+                        "example": "txn_abc123xyz",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "sourceAccountId": {
+                        "description": "Source account UUID (null for deposits)",
+                        "example": "550e8400-e29b-41d4-a716-446655440000",
+                        "anyOf": [
+                            {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "destinationAccountId": {
+                        "description": "Destination account UUID",
+                        "example": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "amount": {
+                        "description": "Transaction amount in cents",
+                        "example": 10050,
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                    },
+                    "createdAt": {
+                        "description": "Transaction creation timestamp",
+                        "example": "2025-10-06T12:00:00Z",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "transactionId",
+                    "idempotencyKey",
+                    "destinationAccountId",
+                    "amount",
+                    "createdAt"
+                ],
+                "additionalProperties": false
+            },
+            "PaymentNetworksResponse": {
+                "type": "object",
+                "properties": {
+                    "accountId": {
+                        "description": "Account UUID",
+                        "example": "550e8400-e29b-41d4-a716-446655440000",
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "paymentNetworks": {
+                        "description": "List of supported payment networks",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PaymentNetwork"
+                        }
+                    }
+                },
+                "required": [
+                    "accountId",
+                    "paymentNetworks"
+                ],
+                "additionalProperties": false
+            },
+            "PaymentNetwork": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "description": "Payment network type",
+                        "example": "ACH",
+                        "type": "string",
+                        "enum": [
+                            "ACH",
+                            "WIRE"
+                        ]
+                    },
+                    "enabled": {
+                        "description": "Whether this payment network is enabled",
+                        "example": true,
+                        "type": "boolean"
+                    },
+                    "capabilities": {
+                        "description": "Supported capabilities",
+                        "example": [
+                            "credit",
+                            "debit"
+                        ],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "type",
+                    "enabled",
+                    "capabilities"
                 ],
                 "additionalProperties": false
             }

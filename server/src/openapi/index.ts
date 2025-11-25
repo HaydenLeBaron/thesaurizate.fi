@@ -9,6 +9,7 @@ import {
   AccountIdPathSchema,
 } from '../schemas/transactions';
 import { CreateAccountSchema, AccountSchema } from '../schemas/accounts';
+import { CreateUserSchema, UserSchema } from '../schemas/users';
 import {
   AccountListQuerySchema,
   AccountBalanceQuerySchema as V2AccountBalanceQuerySchema,
@@ -55,6 +56,39 @@ export const openApiSpec = createDocument({
             content: {
               'application/json': {
                 schema: AccountSchema,
+              },
+            },
+          },
+          '400': {
+            description: 'Validation error',
+          },
+          '409': {
+            description: 'Email already exists',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/v1/users': {
+      post: {
+        summary: 'Create a new user',
+        description: 'Register a new user account',
+        tags: ['Users'],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: CreateUserSchema,
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'User created successfully',
+            content: {
+              'application/json': {
+                schema: UserSchema,
               },
             },
           },

@@ -78,8 +78,8 @@ router.get('/accounts/:accountId', async (req, res) => {
         limit: null, // No limit for now
       },
       liabilities: {
-        credit: 0, // No credit liability for now
-        mortgage: 0, // No mortgage liability for now
+        credit: 0, // TODO/is-this-needed: No credit liability for now
+        mortgage: 0, // TODO/is-this-needed: No mortgage liability for now
       },
       metadata: {
         createdAt: String(account.created_at),
