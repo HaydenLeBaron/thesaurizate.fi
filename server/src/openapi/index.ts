@@ -24,7 +24,7 @@ export const openApiSpec = createDocument({
     },
   ],
   paths: {
-    '/accounts': {
+    '/v1/accounts': {
       post: {
         summary: 'Create a new account',
         description: 'Register a new account account',
@@ -57,7 +57,7 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/transactions': {
+    '/v1/transactions': {
       post: {
         summary: 'Create a new transaction',
         description: 'Execute a financial transfer between two accounts with JIT balance verification',
@@ -87,7 +87,7 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/accounts/{id}/balance': {
+    '/v1/accounts/{id}/balance': {
       get: {
         summary: 'Get account balance',
         description: 'Get current balance or historical balance at a specific date',
@@ -114,7 +114,7 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/accounts/{id}/transactions': {
+    '/v1/accounts/{id}/transactions': {
       get: {
         summary: 'Get account transaction history',
         description: 'Get all transactions where account is source or destination',
@@ -140,7 +140,7 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/accounts/{id}/deposit': {
+    '/v1/accounts/{id}/deposit': {
       post: {
         summary: 'Deposit money into account account',
         description: 'Inject money into the system by depositing funds into a account account',
@@ -169,6 +169,26 @@ export const openApiSpec = createDocument({
           },
           '500': {
             description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/v2/ping': {
+      get: {
+        summary: 'Ping endpoint',
+        description: 'Simple ping endpoint for version 2 API',
+        tags: ['System'],
+        responses: {
+          '200': {
+            description: 'Ping successful',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  status: z.string().meta({ example: 'ok' }),
+                  version: z.string().meta({ example: 'v2' }),
+                }),
+              },
+            },
           },
         },
       },

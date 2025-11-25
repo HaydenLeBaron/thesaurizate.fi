@@ -10,7 +10,7 @@ describe('Schema Validation Tests', () => {
     await pool.query('TRUNCATE TABLE transactions, accounts, users RESTART IDENTITY CASCADE');
 
     const userResponse = await request(app)
-      .post('/users')
+      .post('/v1/users')
       .send({
         email: 'schema@example.com',
         password: 'password123',
@@ -18,7 +18,7 @@ describe('Schema Validation Tests', () => {
     const userId = userResponse.body.id;
 
     const accountResponse = await request(app)
-      .post('/accounts')
+      .post('/v1/accounts')
       .send({
         user_id: userId,
       });
@@ -37,7 +37,7 @@ describe('Schema Validation Tests', () => {
 
       for (const body of invalidTypes) {
         const response = await request(app)
-          .post('/accounts')
+          .post('/v1/accounts')
           .send(body)
           .expect(400);
 
@@ -47,7 +47,7 @@ describe('Schema Validation Tests', () => {
 
     it('should reject missing user_id', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({})
         .expect(400);
 
@@ -56,7 +56,7 @@ describe('Schema Validation Tests', () => {
 
     it('should reject extra unexpected fields gracefully', async () => {
       const userResponse = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'extra@example.com',
           password: 'password123',
@@ -64,7 +64,7 @@ describe('Schema Validation Tests', () => {
         .expect(201);
 
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userResponse.body.id,
           unexpectedField: 'unexpected',
@@ -83,7 +83,7 @@ describe('Schema Validation Tests', () => {
 
     beforeEach(async () => {
       const user2Response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'account2@example.com',
           password: 'password123',
@@ -91,7 +91,7 @@ describe('Schema Validation Tests', () => {
       const userId2 = user2Response.body.id;
 
       const account2Response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userId2,
         });
@@ -121,7 +121,7 @@ describe('Schema Validation Tests', () => {
         delete body[fieldToOmit];
 
         const response = await request(app)
-          .post('/transactions')
+          .post('/v1/transactions')
           .send(body)
           .expect(400);
 
@@ -140,7 +140,7 @@ describe('Schema Validation Tests', () => {
 
       for (const invalidUUID of invalidUUIDs) {
         const response = await request(app)
-          .post('/transactions')
+          .post('/v1/transactions')
           .send({
             idempotency_key: invalidUUID,
             source_account_id: accountId,
@@ -155,7 +155,7 @@ describe('Schema Validation Tests', () => {
 
     it('should validate source_account_id is UUID format', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: 'not-a-uuid',
@@ -169,7 +169,7 @@ describe('Schema Validation Tests', () => {
 
     it('should validate destination_account_id is UUID format', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -186,7 +186,7 @@ describe('Schema Validation Tests', () => {
 
       for (const amount of invalidAmounts) {
         const response = await request(app)
-          .post('/transactions')
+          .post('/v1/transactions')
           .send({
             idempotency_key: randomUUID(),
             source_account_id: accountId,
@@ -201,7 +201,7 @@ describe('Schema Validation Tests', () => {
 
     it('should validate source and destination are different (refinement)', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -237,7 +237,7 @@ describe('Schema Validation Tests', () => {
 
       for (const body of invalidBodies) {
         const response = await request(app)
-          .post('/transactions')
+          .post('/v1/transactions')
           .send(body)
           .expect(400);
 
@@ -352,7 +352,7 @@ describe('Schema Validation Tests', () => {
 
     it('should validate account ID in path parameter', async () => {
       const response = await request(app)
-        .get('/accounts/not-a-uuid/balance')
+        .get('/v1/accounts/not-a-uuid/balance')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -362,7 +362,7 @@ describe('Schema Validation Tests', () => {
   describe('Transaction History Query Validation', () => {
     it('should validate account ID in path parameter', async () => {
       const response = await request(app)
-        .get('/accounts/not-a-uuid/transactions')
+        .get('/v1/accounts/not-a-uuid/transactions')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -381,7 +381,7 @@ describe('Schema Validation Tests', () => {
     it('should handle requests with wrong content type', async () => {
       // Express should parse JSON even with missing content-type for simple objects
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .set('Content-Type', 'text/plain')
         .send('email=test@example.com&password=password123');
 
@@ -391,7 +391,7 @@ describe('Schema Validation Tests', () => {
 
     it('should accept application/json content type', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .set('Content-Type', 'application/json')
         .send(JSON.stringify({
           email: 'contenttype@example.com',
@@ -406,7 +406,7 @@ describe('Schema Validation Tests', () => {
   describe('Malformed JSON Handling', () => {
     it('should handle malformed JSON in request body', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .set('Content-Type', 'application/json')
         .send('{"email": "test@example.com", "password": invalid}'); // Invalid JSON
 
@@ -415,7 +415,7 @@ describe('Schema Validation Tests', () => {
 
     it('should handle empty request body', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send('')
         .expect(400);
 
@@ -438,7 +438,7 @@ describe('Schema Validation Tests', () => {
 
     it('should not coerce boolean to string', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: true,
           password: 'password123',
@@ -459,7 +459,7 @@ describe('Schema Validation Tests', () => {
 
       for (const email of sqlInjectionAttempts) {
         const response = await request(app)
-          .post('/accounts')
+          .post('/v1/accounts')
           .send({
             email,
             password: 'password123',
@@ -472,7 +472,7 @@ describe('Schema Validation Tests', () => {
 
     it('should sanitize UUID inputs through validation', async () => {
       const response = await request(app)
-        .get("/accounts/'; DROP TABLE accounts;--/balance")
+        .get("/v1/accounts/'; DROP TABLE accounts;--/balance")
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -482,7 +482,7 @@ describe('Schema Validation Tests', () => {
   describe('Response Schema Consistency', () => {
     it('should return consistent account schema on creation', async () => {
       const userResponse = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'schema-test@example.com',
           password: 'password123',
@@ -490,7 +490,7 @@ describe('Schema Validation Tests', () => {
         .expect(201);
 
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userResponse.body.id,
         })
@@ -504,14 +504,14 @@ describe('Schema Validation Tests', () => {
 
     it('should return consistent transaction schema on creation', async () => {
       const user2Response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'account2@example.com',
           password: 'password123',
         });
 
       const account2Response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: user2Response.body.id,
         });
@@ -522,7 +522,7 @@ describe('Schema Validation Tests', () => {
       });
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
