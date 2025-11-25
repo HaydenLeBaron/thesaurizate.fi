@@ -12,29 +12,29 @@
         }
     ],
     "paths": {
-        "/users": {
+        "/accounts": {
             "post": {
-                "summary": "Create a new user",
-                "description": "Register a new user account",
+                "summary": "Create a new account",
+                "description": "Register a new account account",
                 "tags": [
-                    "Users"
+                    "Accounts"
                 ],
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/CreateUser"
+                                "$ref": "#/components/schemas/CreateAccount"
                             }
                         }
                     }
                 },
                 "responses": {
                     "201": {
-                        "description": "User created successfully",
+                        "description": "Account created successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/User"
+                                    "$ref": "#/components/schemas/Account"
                                 }
                             }
                         }
@@ -54,7 +54,7 @@
         "/transactions": {
             "post": {
                 "summary": "Create a new transaction",
-                "description": "Execute a financial transfer between two users with JIT balance verification",
+                "description": "Execute a financial transfer between two accounts with JIT balance verification",
                 "tags": [
                     "Transactions"
                 ],
@@ -87,9 +87,9 @@
                 }
             }
         },
-        "/users/{id}/balance": {
+        "/accounts/{id}/balance": {
             "get": {
-                "summary": "Get user balance",
+                "summary": "Get account balance",
                 "description": "Get current balance or historical balance at a specific date",
                 "tags": [
                     "Transactions"
@@ -99,14 +99,14 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
-                            "description": "User UUID",
+                            "description": "Account UUID",
                             "example": "550e8400-e29b-41d4-a716-446655440000",
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "required": true,
-                        "description": "User UUID"
+                        "description": "Account UUID"
                     },
                     {
                         "in": "query",
@@ -123,11 +123,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "User balance",
+                        "description": "Account balance",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/UserBalance"
+                                    "$ref": "#/components/schemas/AccountBalance"
                                 }
                             }
                         }
@@ -141,10 +141,10 @@
                 }
             }
         },
-        "/users/{id}/transactions": {
+        "/accounts/{id}/transactions": {
             "get": {
-                "summary": "Get user transaction history",
-                "description": "Get all transactions where user is source or destination",
+                "summary": "Get account transaction history",
+                "description": "Get all transactions where account is source or destination",
                 "tags": [
                     "Transactions"
                 ],
@@ -153,14 +153,14 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
-                            "description": "User UUID",
+                            "description": "Account UUID",
                             "example": "550e8400-e29b-41d4-a716-446655440000",
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "required": true,
-                        "description": "User UUID"
+                        "description": "Account UUID"
                     }
                 ],
                 "responses": {
@@ -186,10 +186,10 @@
                 }
             }
         },
-        "/users/{id}/deposit": {
+        "/accounts/{id}/deposit": {
             "post": {
-                "summary": "Deposit money into user account",
-                "description": "Inject money into the system by depositing funds into a user account",
+                "summary": "Deposit money into account account",
+                "description": "Inject money into the system by depositing funds into a account account",
                 "tags": [
                     "Transactions"
                 ],
@@ -198,14 +198,14 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
-                            "description": "User UUID",
+                            "description": "Account UUID",
                             "example": "550e8400-e29b-41d4-a716-446655440000",
                             "type": "string",
                             "format": "uuid",
                             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                         },
                         "required": true,
-                        "description": "User UUID"
+                        "description": "Account UUID"
                     }
                 ],
                 "requestBody": {
@@ -270,26 +270,17 @@
     },
     "components": {
         "schemas": {
-            "CreateUser": {
+            "CreateAccount": {
                 "type": "object",
                 "properties": {
-                    "email": {
-                        "description": "User email address",
-                        "example": "user@example.com",
+                    "user_id": {
                         "type": "string",
-                        "format": "email",
-                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                    },
-                    "password": {
-                        "description": "User password (min 8 characters)",
-                        "example": "mySecurePass123",
-                        "type": "string",
-                        "minLength": 8
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     }
                 },
                 "required": [
-                    "email",
-                    "password"
+                    "user_id"
                 ]
             },
             "CreateTransaction": {
@@ -302,15 +293,15 @@
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "source_user_id": {
-                        "description": "UUID of the user sending funds",
+                    "source_account_id": {
+                        "description": "UUID of the account sending funds",
                         "example": "550e8400-e29b-41d4-a716-446655440000",
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "destination_user_id": {
-                        "description": "UUID of the user receiving funds",
+                    "destination_account_id": {
+                        "description": "UUID of the account receiving funds",
                         "example": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
                         "type": "string",
                         "format": "uuid",
@@ -326,8 +317,8 @@
                 },
                 "required": [
                     "idempotency_key",
-                    "source_user_id",
-                    "destination_user_id",
+                    "source_account_id",
+                    "destination_account_id",
                     "amount"
                 ]
             },
@@ -354,7 +345,7 @@
                     "amount"
                 ]
             },
-            "User": {
+            "Account": {
                 "type": "object",
                 "properties": {
                     "id": {
@@ -362,8 +353,10 @@
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "email": {
-                        "type": "string"
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
                     "created_at": {
                         "type": "string"
@@ -374,7 +367,7 @@
                 },
                 "required": [
                     "id",
-                    "email",
+                    "user_id",
                     "created_at",
                     "updated_at"
                 ],
@@ -393,7 +386,7 @@
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                     },
-                    "source_user_id": {
+                    "source_account_id": {
                         "anyOf": [
                             {
                                 "type": "string",
@@ -405,7 +398,7 @@
                             }
                         ]
                     },
-                    "destination_user_id": {
+                    "destination_account_id": {
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -422,16 +415,16 @@
                 "required": [
                     "id",
                     "idempotency_key",
-                    "destination_user_id",
+                    "destination_account_id",
                     "amount",
                     "created_at"
                 ],
                 "additionalProperties": false
             },
-            "UserBalance": {
+            "AccountBalance": {
                 "type": "object",
                 "properties": {
-                    "user_id": {
+                    "account_id": {
                         "type": "string",
                         "format": "uuid",
                         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -445,7 +438,7 @@
                     }
                 },
                 "required": [
-                    "user_id",
+                    "account_id",
                     "balance"
                 ],
                 "additionalProperties": false

@@ -20,8 +20,8 @@ function isSerializationError(error: any): boolean {
  */
 async function logFailedTransaction(data: {
   idempotencyKey: string;
-  sourceUserId: string | null;
-  destinationUserId: string;
+  sourceAccountId: string | null;
+  destinationAccountId: string;
   amount: number;
   errorMessage: string;
   retryCount: number;
@@ -30,15 +30,15 @@ async function logFailedTransaction(data: {
     await db.sql`
       INSERT INTO private.failed_transactions (
         idempotency_key,
-        source_user_id,
-        destination_user_id,
+        source_account_id,
+        destination_account_id,
         amount,
         error_message,
         retry_count
       ) VALUES (
         ${db.param(data.idempotencyKey)}::uuid,
-        ${db.param(data.sourceUserId)}::uuid,
-        ${db.param(data.destinationUserId)}::uuid,
+        ${db.param(data.sourceAccountId)}::uuid,
+        ${db.param(data.destinationAccountId)}::uuid,
         ${db.param(data.amount)},
         ${db.param(data.errorMessage)},
         ${db.param(data.retryCount)}
@@ -63,7 +63,7 @@ function sleep(ms: number): Promise<void> {
  * Security guarantees:
  * - Idempotent (UNIQUE constraint on idempotency_key)
  * - Atomic (PostgreSQL TRANSACTION)
- * - Race-condition-free (SELECT FOR UPDATE row locks on users table)
+ * - Race-condition-free (SELECT FOR UPDATE row locks on accounts table)
  * - Single source of truth (balance calculated from ledger inside transaction)
  * - No balance drift (balance is never stored, only calculated)
  *
@@ -72,8 +72,8 @@ function sleep(ms: number): Promise<void> {
  */
 export async function executeTransaction(data: {
   idempotencyKey: string;
-  sourceUserId: string;
-  destinationUserId: string;
+  sourceAccountId: string;
+  destinationAccountId: string;
   amount: number;
 }): Promise<s.transactions.JSONSelectable> {
   // Retry loop with exponential backoff for serialization errors
@@ -92,14 +92,14 @@ export async function executeTransaction(data: {
 
       // 2. Begin Atomic Database Transaction
       return await db.serializable(pool, async (txClient) => {
-        // 3. Acquire Row-Level Locks on Users (Prevents Deadlocks)
-        // Lock users in sorted order by user_id to prevent deadlocks
-        // Since each user = one account, we lock the user rows directly
-        const lockOrderIds = [data.sourceUserId, data.destinationUserId].sort();
+        // 3. Acquire Row-Level Locks on Accounts (Prevents Deadlocks)
+        // Lock accounts in sorted order by account_id to prevent deadlocks
+        // Since each account = one account, we lock the account rows directly
+        const lockOrderIds = [data.sourceAccountId, data.destinationAccountId].sort();
 
         await Promise.all(
-          lockOrderIds.map((userId) =>
-            db.sql`SELECT FROM users WHERE ${{ id: userId }} FOR UPDATE`.run(txClient)
+          lockOrderIds.map((accountId) =>
+            db.sql`SELECT FROM accounts WHERE ${{ id: accountId }} FOR UPDATE`.run(txClient)
           )
         );
 
@@ -107,7 +107,7 @@ export async function executeTransaction(data: {
         // CRITICAL: This calculation happens INSIDE the transaction with locks held,
         // guaranteeing that the balance cannot change between check and transaction creation.
         const balanceResult = await db.sql<s.transactions.SQL, Array<{ balance: string }>>`
-          SELECT public.get_current_balance(${db.param(data.sourceUserId)}::uuid) as balance
+          SELECT public.get_current_balance(${db.param(data.sourceAccountId)}::uuid) as balance
         `.run(txClient);
 
         const sourceBalance = parseInt(balanceResult[0].balance, 10);
@@ -124,8 +124,8 @@ export async function executeTransaction(data: {
           'transactions',
           {
             idempotency_key: data.idempotencyKey,
-            source_user_id: data.sourceUserId,
-            destination_user_id: data.destinationUserId,
+            source_account_id: data.sourceAccountId,
+            destination_account_id: data.destinationAccountId,
             amount: data.amount,
           }
         ).run(txClient);
@@ -147,8 +147,8 @@ export async function executeTransaction(data: {
         const errorMessage = error instanceof Error ? error.message : String(error);
         await logFailedTransaction({
           idempotencyKey: data.idempotencyKey,
-          sourceUserId: data.sourceUserId,
-          destinationUserId: data.destinationUserId,
+          sourceAccountId: data.sourceAccountId,
+          destinationAccountId: data.destinationAccountId,
           amount: data.amount,
           errorMessage,
           retryCount: attempt,
@@ -164,33 +164,33 @@ export async function executeTransaction(data: {
 }
 
 /**
- * Get the current balance for a user by calculating from the ledger
+ * Get the current balance for a account by calculating from the ledger
  * @returns Balance in cents (integer)
  */
-export async function getUserBalance(userId: string): Promise<number> {
+export async function getAccountBalance(accountId: string): Promise<number> {
   const result = await db.sql<s.transactions.SQL, Array<{ balance: string }>>`
-    SELECT public.get_current_balance(${db.param(userId)}::uuid) as balance
+    SELECT public.get_current_balance(${db.param(accountId)}::uuid) as balance
   `.run(pool);
 
   return parseInt(result[0].balance, 10);
 }
 
 /**
- * Get the balance for a user at a specific date
+ * Get the balance for a account at a specific date
  * @returns Balance in cents (integer)
  */
-export async function getUserBalanceOnDate(userId: string, date: Date): Promise<number> {
+export async function getAccountBalanceOnDate(accountId: string, date: Date): Promise<number> {
   const result = await db.sql<s.transactions.SQL, Array<{ balance: string }>>`
-    SELECT public.get_balance_on_date(${db.param(userId)}::uuid, ${db.param(date)}::timestamptz) as balance
+    SELECT public.get_balance_on_date(${db.param(accountId)}::uuid, ${db.param(date)}::timestamptz) as balance
   `.run(pool);
 
   return parseInt(result[0].balance, 10);
 }
 
 /**
- * Deposits money into a user's account (injects money into the system).
+ * Deposits money into a account's account (injects money into the system).
  *
- * This creates a transaction with a NULL source_user_id, effectively
+ * This creates a transaction with a NULL source_account_id, effectively
  * injecting money into the system. This is how initial capital enters.
  *
  * Security guarantees:
@@ -202,7 +202,7 @@ export async function getUserBalanceOnDate(userId: string, date: Date): Promise<
  */
 export async function executeDeposit(data: {
   idempotencyKey: string;
-  userId: string;
+  accountId: string;
   amount: number;
 }): Promise<s.transactions.JSONSelectable> {
   // 1. Idempotency Check
@@ -222,8 +222,8 @@ export async function executeDeposit(data: {
       'transactions',
       {
         idempotency_key: data.idempotencyKey,
-        source_user_id: null, // NULL source = system deposit
-        destination_user_id: data.userId,
+        source_account_id: null, // NULL source = system deposit
+        destination_account_id: data.accountId,
         amount: data.amount,
       }
     ).run(txClient);

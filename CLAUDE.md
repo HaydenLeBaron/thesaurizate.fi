@@ -18,7 +18,7 @@ Built with:
 ## Repository Information
 
 - **Repository**: thesaurizate.fi
-- **Current State**: Complete financial transaction API with users, transfers, deposits, and balance queries
+- **Current State**: Complete financial transaction API with accounts, transfers, deposits, and balance queries
 - **Git Branch**: transactions-mvp
 
 ## Architecture
@@ -29,7 +29,7 @@ Built with:
 - **Zod Schemas**: Auto-generated from database using `pgzod` in `server/src/schemas/pgzod/`
 - **OpenAPI Spec**: Manually defined in `server/src/openapi/index.ts`
 - **Swagger UI**: Interactive API documentation at `http://localhost:3000/api-docs`
-- **Field Naming**: All database fields and API responses use snake_case (e.g., `created_at`, `source_user_id`)
+- **Field Naming**: All database fields and API responses use snake_case (e.g., `created_at`, `source_account_id`)
 
 ## Core Concepts
 
@@ -40,11 +40,11 @@ Built with:
 - **Audit Trail**: Complete history of all financial movements
 
 ### Transaction Types
-1. **Transfers** (`POST /transactions`): Move funds between users (requires sufficient balance)
-2. **Deposits** (`POST /users/:id/deposit`): Inject money into system (source_user_id is NULL)
+1. **Transfers** (`POST /transactions`): Move funds between accounts (requires sufficient balance)
+2. **Deposits** (`POST /accounts/:id/deposit`): Inject money into system (source_account_id is NULL)
 
 ### Concurrency Control
-- Row-level locks (`SELECT FOR UPDATE`) on source/destination users
+- Row-level locks (`SELECT FOR UPDATE`) on source/destination accounts
 - Deterministic UUID ordering prevents deadlocks
 - Balance check after acquiring locks
 - Atomic transaction insertion
@@ -56,11 +56,11 @@ Built with:
 
 ## API Endpoints
 
-- `POST /users` - Create a new user
-- `POST /transactions` - Transfer funds between users
-- `POST /users/:id/deposit` - Deposit funds into user account
-- `GET /users/:id/balance` - Get current balance (or historical with ?date= query param)
-- `GET /users/:id/transactions` - Get transaction history for a user
+- `POST /accounts` - Create a new account
+- `POST /transactions` - Transfer funds between accounts
+- `POST /accounts/:id/deposit` - Deposit funds into account account
+- `GET /accounts/:id/balance` - Get current balance (or historical with ?date= query param)
+- `GET /accounts/:id/transactions` - Get transaction history for a account
 - `GET /api-docs` - Swagger UI documentation
 - `GET /openapi.json` - OpenAPI specification
 - `GET /health` - Health check endpoint
@@ -95,7 +95,7 @@ Built with:
 **Unit and Integration Tests:**
 The project includes comprehensive test coverage using Jest. Tests are located in `server/src/__tests__/`:
 - `health.test.ts` - Health endpoint tests
-- `users.test.ts` - User management and balance tests
+- `accounts.test.ts` - Account management and balance tests
 - `transactions.test.ts` - Transaction processing tests
 - `edge-cases.test.ts` - Edge case validation
 - `balance-accuracy.test.ts` - Balance accuracy verification
@@ -122,9 +122,9 @@ k6 run k6-stress-test.js
 ```
 
 The stress test:
-- Creates 10,000 test users with initial balances
-- Ramps up to 1,000 concurrent virtual users
-- Executes random transactions between users
+- Creates 10,000 test accounts with initial balances
+- Ramps up to 1,000 concurrent virtual accounts
+- Executes random transactions between accounts
 - Validates performance thresholds (95th percentile < 850ms, < 10% failure rate)
 - Verifies data integrity at teardown (total balance conservation)
 
@@ -132,9 +132,9 @@ The stress test:
 
 ### Tables
 
-#### `users` (public schema)
+#### `accounts` (public schema)
 ```sql
-CREATE TABLE users (
+CREATE TABLE accounts (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email        TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
@@ -148,8 +148,8 @@ CREATE TABLE users (
 CREATE TABLE transactions (
   id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   idempotency_key      UUID NOT NULL UNIQUE,
-  source_user_id       UUID REFERENCES users(id),  -- NULL = deposit
-  destination_user_id  UUID NOT NULL REFERENCES users(id),
+  source_account_id       UUID REFERENCES accounts(id),  -- NULL = deposit
+  destination_account_id  UUID NOT NULL REFERENCES accounts(id),
   amount               BIGINT NOT NULL CHECK (amount > 0),  -- stored in cents
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -160,8 +160,8 @@ CREATE TABLE transactions (
 CREATE TABLE private.failed_transactions (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   idempotency_key      UUID NOT NULL,
-  source_user_id       UUID REFERENCES public.users(id),
-  destination_user_id  UUID REFERENCES public.users(id),
+  source_account_id       UUID REFERENCES public.accounts(id),
+  destination_account_id  UUID REFERENCES public.accounts(id),
   amount               INTEGER NOT NULL CHECK (amount > 0),
   error_message        TEXT NOT NULL,
   retry_count          INTEGER NOT NULL DEFAULT 0,
@@ -172,10 +172,10 @@ CREATE TABLE private.failed_transactions (
 
 ### Functions
 
-#### `public.get_current_balance(user_id UUID) → BIGINT`
-Returns current balance for a user (computed from ledger)
+#### `public.get_current_balance(account_id UUID) → BIGINT`
+Returns current balance for a account (computed from ledger)
 
-#### `public.get_balance_on_date(user_id UUID, date TIMESTAMPTZ) → BIGINT`
+#### `public.get_balance_on_date(account_id UUID, date TIMESTAMPTZ) → BIGINT`
 Returns historical balance at a specific point in time
 
 ## Workflow for Schema Changes
@@ -198,13 +198,13 @@ The project includes a PostgreSQL database running in Docker. To connect to it d
 - **Host**: `localhost`
 - **Port**: `5432`
 - **Database**: `thesaurum`
-- **User**: `postgres`
+- **Account**: `postgres`
 - **Password**: `postgres`
 
 ## Important Notes
 
 ### Security (Development Mode)
-- Password hashing is currently **disabled** for testing (see `server/src/routes/users.ts:20`)
+- Password hashing is currently **disabled** for testing (see `server/src/routes/accounts.ts:20`)
 - In production, uncomment bcrypt hashing logic
 - No authentication/authorization implemented yet
 - Database credentials are hardcoded for development
@@ -220,6 +220,6 @@ The project includes a PostgreSQL database running in Docker. To connect to it d
 - Retrying with the same key returns 409 Conflict (safe to retry)
 
 ### Balance Queries
-- Current balance: `GET /users/:id/balance`
-- Historical balance: `GET /users/:id/balance?date=2025-01-01T00:00:00Z`
+- Current balance: `GET /accounts/:id/balance`
+- Historical balance: `GET /accounts/:id/balance?date=2025-01-01T00:00:00Z`
 - Balances are always computed from the ledger (never stored)

@@ -8,7 +8,7 @@ export const options = {
   scenarios: {
     balance_reads: {
       executor: 'shared-iterations',
-      vus: 100, // 100 concurrent virtual users
+      vus: 100, // 100 concurrent virtual accounts
       iterations: 50000, // Total 50k balance reads
       maxDuration: '5m',
     },
@@ -22,16 +22,16 @@ export const options = {
 
 const BASE_URL = __ENV.API_URL || 'http://localhost:3000';
 
-// Setup: Create test users with known balances
+// Setup: Create test accounts with known balances
 export function setup() {
-  console.log('Setting up test users for balance reads...');
+  console.log('Setting up test accounts for balance reads...');
 
   const timestamp = Date.now();
-  const numUsers = 1000; // Create 1000 users to query
-  const userIds = [];
+  const numAccounts = 1000; // Create 1000 accounts to query
+  const accountIds = [];
 
-  for (let i = 0; i < numUsers; i++) {
-    const res = http.post(`${BASE_URL}/users`, JSON.stringify({
+  for (let i = 0; i < numAccounts; i++) {
+    const res = http.post(`${BASE_URL}/accounts`, JSON.stringify({
       email: `balancetest${timestamp}_${i}@example.com`,
       password: 'password123',
     }), {
@@ -39,33 +39,33 @@ export function setup() {
     });
 
     if (res.status === 201) {
-      const userId = JSON.parse(res.body).id;
-      userIds.push(userId);
+      const accountId = JSON.parse(res.body).id;
+      accountIds.push(accountId);
 
-      // Give each user a large initial balance
-      http.post(`${BASE_URL}/users/${userId}/deposit`, JSON.stringify({
+      // Give each account a large initial balance
+      http.post(`${BASE_URL}/accounts/${accountId}/deposit`, JSON.stringify({
         idempotency_key: uuidv4(),
-        amount: 100000000, // $1M per user to support many transactions
+        amount: 100000000, // $1M per account to support many transactions
       }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
   }
 
-  console.log(`Created ${userIds.length} users with balances`);
-  console.log('Creating 10-100 transactions per user to build transaction history...');
+  console.log(`Created ${accountIds.length} accounts with balances`);
+  console.log('Creating 10-100 transactions per account to build transaction history...');
 
-  // Create 10-100 transactions per user to create realistic balance calculation load
+  // Create 10-100 transactions per account to create realistic balance calculation load
   let totalTransactionsCreated = 0;
-  for (let i = 0; i < userIds.length; i++) {
-    const numTransactions = Math.floor(Math.random() * 101) + 10; // Random 10-100 transactions per user
+  for (let i = 0; i < accountIds.length; i++) {
+    const numTransactions = Math.floor(Math.random() * 101) + 10; // Random 10-100 transactions per account
 
     for (let j = 0; j < numTransactions; j++) {
-      // Pick random source and destination (different users)
+      // Pick random source and destination (different accounts)
       const sourceIdx = i;
-      let destIdx = Math.floor(Math.random() * userIds.length);
+      let destIdx = Math.floor(Math.random() * accountIds.length);
       while (destIdx === sourceIdx) {
-        destIdx = Math.floor(Math.random() * userIds.length);
+        destIdx = Math.floor(Math.random() * accountIds.length);
       }
 
       // Small random amount
@@ -73,8 +73,8 @@ export function setup() {
 
       http.post(`${BASE_URL}/transactions`, JSON.stringify({
         idempotency_key: uuidv4(),
-        source_user_id: userIds[sourceIdx],
-        destination_user_id: userIds[destIdx],
+        source_account_id: accountIds[sourceIdx],
+        destination_account_id: accountIds[destIdx],
         amount: amount,
       }), {
         headers: { 'Content-Type': 'application/json' },
@@ -84,28 +84,28 @@ export function setup() {
     }
 
     if ((i + 1) % 100 === 0) {
-      console.log(`Created transactions for ${i + 1}/${userIds.length} users (${totalTransactionsCreated} total transactions so far)`);
+      console.log(`Created transactions for ${i + 1}/${accountIds.length} accounts (${totalTransactionsCreated} total transactions so far)`);
     }
   }
 
-  console.log(`Setup complete: ${userIds.length} users, ${totalTransactionsCreated} transactions created`);
-  return { userIds };
+  console.log(`Setup complete: ${accountIds.length} accounts, ${totalTransactionsCreated} transactions created`);
+  return { accountIds };
 }
 
 // Main test: Read balances repeatedly
 export default function (data) {
-  const { userIds } = data;
+  const { accountIds } = data;
 
-  if (!userIds || userIds.length === 0) {
-    console.error('No users available for testing');
+  if (!accountIds || accountIds.length === 0) {
+    console.error('No accounts available for testing');
     return;
   }
 
-  // Pick a random user to query
-  const randomUserId = userIds[Math.floor(Math.random() * userIds.length)];
+  // Pick a random account to query
+  const randomAccountId = accountIds[Math.floor(Math.random() * accountIds.length)];
 
-  // GET balance for the user
-  const res = http.get(`${BASE_URL}/users/${randomUserId}/balance`, {
+  // GET balance for the account
+  const res = http.get(`${BASE_URL}/accounts/${randomAccountId}/balance`, {
     headers: { 'Content-Type': 'application/json' },
   });
 

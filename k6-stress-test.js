@@ -9,9 +9,9 @@ export const options = {
       executor: 'ramping-vus',
       startVUs: 0,
       stages: [
-        { duration: '10s', target: 100 },   // Ramp up to 100 virtual users
-        { duration: '30s', target: 500 },   // Ramp up to 500 users
-        { duration: '1m', target: 1000 },   // Peak at 1000 concurrent users
+        { duration: '10s', target: 100 },   // Ramp up to 100 virtual accounts
+        { duration: '30s', target: 500 },   // Ramp up to 500 accounts
+        { duration: '1m', target: 1000 },   // Peak at 1000 concurrent accounts
         { duration: '30s', target: 0 },     // Ramp down
       ],
     },
@@ -24,19 +24,19 @@ export const options = {
 
 const BASE_URL = __ENV.API_URL || 'http://localhost:3000';
 
-// Setup: Create users (runs once per VU)
+// Setup: Create accounts (runs once per VU)
 export function setup() {
   console.log('Setting up test data...');
 
   // Use timestamp to ensure unique emails across test runs
   const timestamp = Date.now();
 
-  // Create test users (more users = less contention, better success rate)
-  const numUsers = 10000;
-  const userIds = [];
+  // Create test accounts (more accounts = less contention, better success rate)
+  const numAccounts = 10000;
+  const accountIds = [];
 
-  for (let i = 0; i < numUsers; i++) {
-    const res = http.post(`${BASE_URL}/users`, JSON.stringify({
+  for (let i = 0; i < numAccounts; i++) {
+    const res = http.post(`${BASE_URL}/accounts`, JSON.stringify({
       email: `k6test${timestamp}_${i}@example.com`,
       password: 'password123',
     }), {
@@ -44,41 +44,41 @@ export function setup() {
     });
 
     if (res.status === 201) {
-      const userId = JSON.parse(res.body).id;
-      userIds.push(userId);
+      const accountId = JSON.parse(res.body).id;
+      accountIds.push(accountId);
 
-      // Deposit initial balance immediately after creating user
-      const depositRes = http.post(`${BASE_URL}/users/${userId}/deposit`, JSON.stringify({
+      // Deposit initial balance immediately after creating account
+      const depositRes = http.post(`${BASE_URL}/accounts/${accountId}/deposit`, JSON.stringify({
         idempotency_key: uuidv4(),
-        amount: 10000000000, // 100,000,000.00 in cents = $100M per user
+        amount: 10000000000, // 100,000,000.00 in cents = $100M per account
       }), {
         headers: { 'Content-Type': 'application/json' },
       });
 
       if (depositRes.status !== 201) {
-        console.log(`Failed to deposit for user ${i}: status=${depositRes.status}, body=${depositRes.body}`);
+        console.log(`Failed to deposit for account ${i}: status=${depositRes.status}, body=${depositRes.body}`);
       }
     }
   }
 
-  console.log(`Created ${userIds.length} users with initial balances`);
-  return { userIds };
+  console.log(`Created ${accountIds.length} accounts with initial balances`);
+  return { accountIds };
 }
 
 // Main test scenario (runs repeatedly by each VU)
 export default function (data) {
-  const { userIds } = data;
+  const { accountIds } = data;
 
-  if (!userIds || userIds.length < 2) {
-    console.error('Not enough users created');
+  if (!accountIds || accountIds.length < 2) {
+    console.error('Not enough accounts created');
     return;
   }
 
-  // Pick random source and destination users
-  const sourceIdx = Math.floor(Math.random() * userIds.length);
-  let destIdx = Math.floor(Math.random() * userIds.length);
+  // Pick random source and destination accounts
+  const sourceIdx = Math.floor(Math.random() * accountIds.length);
+  let destIdx = Math.floor(Math.random() * accountIds.length);
   while (destIdx === sourceIdx) {
-    destIdx = Math.floor(Math.random() * userIds.length);
+    destIdx = Math.floor(Math.random() * accountIds.length);
   }
 
   const amount = 1; // Fixed 1 cent per transaction to minimize depletion
@@ -87,8 +87,8 @@ export default function (data) {
   // Execute transaction
   const res = http.post(`${BASE_URL}/transactions`, JSON.stringify({
     idempotency_key: idempotencyKey,
-    source_user_id: userIds[sourceIdx],
-    destination_user_id: userIds[destIdx],
+    source_account_id: accountIds[sourceIdx],
+    destination_account_id: accountIds[destIdx],
     amount: amount,
   }), {
     headers: { 'Content-Type': 'application/json' },
@@ -104,19 +104,19 @@ export default function (data) {
 
 // Teardown: Verify data integrity (runs once after all VUs finish)
 export function teardown(data) {
-  const { userIds } = data;
+  const { accountIds } = data;
 
   console.log('\nVerifying data integrity...');
 
   let totalBalance = 0;
-  for (const userId of userIds) {
-    const res = http.get(`${BASE_URL}/users/${userId}/balance`);
+  for (const accountId of accountIds) {
+    const res = http.get(`${BASE_URL}/accounts/${accountId}/balance`);
     if (res.status === 200) {
       totalBalance += JSON.parse(res.body).balance;
     }
   }
 
-  const expectedTotal = userIds.length * 10000000000;
+  const expectedTotal = accountIds.length * 10000000000;
   console.log(`Expected total: ${expectedTotal} cents`);
   console.log(`Actual total: ${totalBalance} cents`);
   console.log(`Difference: ${totalBalance - expectedTotal} cents`);

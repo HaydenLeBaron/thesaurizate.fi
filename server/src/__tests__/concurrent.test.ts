@@ -4,12 +4,12 @@ import { pool } from '../db';
 import { randomUUID } from 'crypto';
 
 describe('Concurrent Transaction Tests', () => {
-  let user1Id: string;
-  let user2Id: string;
-  let user3Id: string;
+  let account1Id: string;
+  let account2Id: string;
+  let account3Id: string;
 
   beforeEach(async () => {
-    await pool.query('TRUNCATE TABLE transactions, users RESTART IDENTITY CASCADE');
+    await pool.query('TRUNCATE TABLE transactions, accounts, users RESTART IDENTITY CASCADE');
 
     // Create test users
     const user1Response = await request(app)
@@ -18,7 +18,7 @@ describe('Concurrent Transaction Tests', () => {
         email: 'concurrent1@example.com',
         password: 'password123',
       });
-    user1Id = user1Response.body.id;
+    const userId1 = user1Response.body.id;
 
     const user2Response = await request(app)
       .post('/users')
@@ -26,7 +26,7 @@ describe('Concurrent Transaction Tests', () => {
         email: 'concurrent2@example.com',
         password: 'password123',
       });
-    user2Id = user2Response.body.id;
+    const userId2 = user2Response.body.id;
 
     const user3Response = await request(app)
       .post('/users')
@@ -34,17 +34,39 @@ describe('Concurrent Transaction Tests', () => {
         email: 'concurrent3@example.com',
         password: 'password123',
       });
-    user3Id = user3Response.body.id;
+    const userId3 = user3Response.body.id;
+
+    // Create test accounts
+    const account1Response = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId1,
+      });
+    account1Id = account1Response.body.id;
+
+    const account2Response = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId2,
+      });
+    account2Id = account2Response.body.id;
+
+    const account3Response = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId3,
+      });
+    account3Id = account3Response.body.id;
   });
 
   describe('Parallel Deposits', () => {
-    it('should handle multiple concurrent deposits to the same user', async () => {
+    it('should handle multiple concurrent deposits to the same account', async () => {
       const depositCount = 10;
       const depositAmount = 1000;
 
       const deposits = Array.from({ length: depositCount }, () =>
         request(app)
-          .post(`/users/${user1Id}/deposit`)
+          .post(`/accounts/${account1Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: depositAmount,
@@ -60,30 +82,30 @@ describe('Concurrent Transaction Tests', () => {
 
       // Final balance should be correct
       const balanceResponse = await request(app)
-        .get(`/users/${user1Id}/balance`)
+        .get(`/accounts/${account1Id}/balance`)
         .expect(200);
 
       expect(balanceResponse.body.balance).toBe(depositCount * depositAmount);
     });
 
-    it('should handle concurrent deposits to different users', async () => {
+    it('should handle concurrent deposits to different accounts', async () => {
       const depositAmount = 5000;
 
       const deposits = [
         request(app)
-          .post(`/users/${user1Id}/deposit`)
+          .post(`/accounts/${account1Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: depositAmount,
           }),
         request(app)
-          .post(`/users/${user2Id}/deposit`)
+          .post(`/accounts/${account2Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: depositAmount,
           }),
         request(app)
-          .post(`/users/${user3Id}/deposit`)
+          .post(`/accounts/${account3Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: depositAmount,
@@ -97,9 +119,9 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // Check all balances
-      const balance1 = await request(app).get(`/users/${user1Id}/balance`);
-      const balance2 = await request(app).get(`/users/${user2Id}/balance`);
-      const balance3 = await request(app).get(`/users/${user3Id}/balance`);
+      const balance1 = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance2 = await request(app).get(`/accounts/${account2Id}/balance`);
+      const balance3 = await request(app).get(`/accounts/${account3Id}/balance`);
 
       expect(balance1.body.balance).toBe(depositAmount);
       expect(balance2.body.balance).toBe(depositAmount);
@@ -109,16 +131,16 @@ describe('Concurrent Transaction Tests', () => {
 
   describe('Parallel Transfers', () => {
     beforeEach(async () => {
-      // Fund user1 with enough money for multiple transfers
+      // Fund account1 with enough money for multiple transfers
       await request(app)
-        .post(`/users/${user1Id}/deposit`)
+        .post(`/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 100000,
         });
     });
 
-    it('should handle multiple concurrent transfers from same user', async () => {
+    it('should handle multiple concurrent transfers from same account', async () => {
       const transferCount = 5;
       const transferAmount = 1000;
 
@@ -127,8 +149,8 @@ describe('Concurrent Transaction Tests', () => {
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: transferAmount,
           })
       );
@@ -141,48 +163,48 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // Check balances
-      const sourceBalance = await request(app).get(`/users/${user1Id}/balance`);
-      const destBalance = await request(app).get(`/users/${user2Id}/balance`);
+      const sourceBalance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const destBalance = await request(app).get(`/accounts/${account2Id}/balance`);
 
       expect(sourceBalance.body.balance).toBe(100000 - transferCount * transferAmount);
       expect(destBalance.body.balance).toBe(transferCount * transferAmount);
     });
 
-    it('should handle bidirectional concurrent transfers between two users', async () => {
-      // Fund user2 as well
+    it('should handle bidirectional concurrent transfers between two accounts', async () => {
+      // Fund account2 as well
       await request(app)
-        .post(`/users/${user2Id}/deposit`)
+        .post(`/accounts/${account2Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000,
         });
 
       const transfers = [
-        // user1 -> user2
+        // account1 -> account2
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: 10000,
           }),
-        // user2 -> user1
+        // account2 -> account1
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user2Id,
-            destination_user_id: user1Id,
+            source_account_id: account2Id,
+            destination_account_id: account1Id,
             amount: 5000,
           }),
-        // user1 -> user2
+        // account1 -> account2
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: 3000,
           }),
       ];
@@ -194,57 +216,57 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // Check final balances
-      const balance1 = await request(app).get(`/users/${user1Id}/balance`);
-      const balance2 = await request(app).get(`/users/${user2Id}/balance`);
+      const balance1 = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance2 = await request(app).get(`/accounts/${account2Id}/balance`);
 
-      // user1: 100000 - 10000 + 5000 - 3000 = 92000
+      // account1: 100000 - 10000 + 5000 - 3000 = 92000
       expect(balance1.body.balance).toBe(92000);
-      // user2: 50000 + 10000 - 5000 + 3000 = 58000
+      // account2: 50000 + 10000 - 5000 + 3000 = 58000
       expect(balance2.body.balance).toBe(58000);
     });
 
     it('should handle circular concurrent transfers (A->B, B->C, C->A)', async () => {
-      // Fund all users
+      // Fund all accounts
       await request(app)
-        .post(`/users/${user2Id}/deposit`)
+        .post(`/accounts/${account2Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000,
         });
 
       await request(app)
-        .post(`/users/${user3Id}/deposit`)
+        .post(`/accounts/${account3Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 30000,
         });
 
       const transfers = [
-        // user1 -> user2
+        // account1 -> account2
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: 5000,
           }),
-        // user2 -> user3
+        // account2 -> account3
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user2Id,
-            destination_user_id: user3Id,
+            source_account_id: account2Id,
+            destination_account_id: account3Id,
             amount: 7000,
           }),
-        // user3 -> user1
+        // account3 -> account1
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user3Id,
-            destination_user_id: user1Id,
+            source_account_id: account3Id,
+            destination_account_id: account1Id,
             amount: 3000,
           }),
       ];
@@ -256,15 +278,15 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // Check balances
-      const balance1 = await request(app).get(`/users/${user1Id}/balance`);
-      const balance2 = await request(app).get(`/users/${user2Id}/balance`);
-      const balance3 = await request(app).get(`/users/${user3Id}/balance`);
+      const balance1 = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance2 = await request(app).get(`/accounts/${account2Id}/balance`);
+      const balance3 = await request(app).get(`/accounts/${account3Id}/balance`);
 
-      // user1: 100000 - 5000 + 3000 = 98000
+      // account1: 100000 - 5000 + 3000 = 98000
       expect(balance1.body.balance).toBe(98000);
-      // user2: 50000 + 5000 - 7000 = 48000
+      // account2: 50000 + 5000 - 7000 = 48000
       expect(balance2.body.balance).toBe(48000);
-      // user3: 30000 + 7000 - 3000 = 34000
+      // account3: 30000 + 7000 - 3000 = 34000
       expect(balance3.body.balance).toBe(34000);
 
       // Total should be conserved: 180000
@@ -276,14 +298,14 @@ describe('Concurrent Transaction Tests', () => {
   describe('Race Conditions and Deadlock Prevention', () => {
     beforeEach(async () => {
       await request(app)
-        .post(`/users/${user1Id}/deposit`)
+        .post(`/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
         });
 
       await request(app)
-        .post(`/users/${user2Id}/deposit`)
+        .post(`/accounts/${account2Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
@@ -299,16 +321,16 @@ describe('Concurrent Transaction Tests', () => {
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: transferAmount,
           }),
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user3Id,
+            source_account_id: account1Id,
+            destination_account_id: account3Id,
             amount: transferAmount,
           }),
       ];
@@ -329,7 +351,7 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // CRITICAL: Verify no double-spending occurred
-      const balance = await request(app).get(`/users/${user1Id}/balance`);
+      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
 
       // Balance must be non-negative (no overdraft)
       expect(balance.body.balance).toBeGreaterThanOrEqual(0);
@@ -344,22 +366,22 @@ describe('Concurrent Transaction Tests', () => {
     });
 
     it('should handle potential deadlock scenario (simultaneous bidirectional transfers)', async () => {
-      // Both users try to send to each other simultaneously
+      // Both accounts try to send to each other simultaneously
       const transfers = [
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: 5000,
           }),
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user2Id,
-            destination_user_id: user1Id,
+            source_account_id: account2Id,
+            destination_account_id: account1Id,
             amount: 3000,
           }),
       ];
@@ -372,8 +394,8 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // Check balances
-      const balance1 = await request(app).get(`/users/${user1Id}/balance`);
-      const balance2 = await request(app).get(`/users/${user2Id}/balance`);
+      const balance1 = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance2 = await request(app).get(`/accounts/${account2Id}/balance`);
 
       expect(balance1.body.balance).toBe(8000); // 10000 - 5000 + 3000
       expect(balance2.body.balance).toBe(12000); // 10000 + 5000 - 3000
@@ -383,7 +405,7 @@ describe('Concurrent Transaction Tests', () => {
   describe('Idempotency Under Concurrency', () => {
     beforeEach(async () => {
       await request(app)
-        .post(`/users/${user1Id}/deposit`)
+        .post(`/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000,
@@ -400,8 +422,8 @@ describe('Concurrent Transaction Tests', () => {
           .post('/transactions')
           .send({
             idempotency_key: idempotencyKey,
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: transferAmount,
           })
       );
@@ -418,14 +440,14 @@ describe('Concurrent Transaction Tests', () => {
       expect(uniqueIds.size).toBe(1);
 
       // Balance should only reflect one transaction
-      const balance1 = await request(app).get(`/users/${user1Id}/balance`);
-      const balance2 = await request(app).get(`/users/${user2Id}/balance`);
+      const balance1 = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance2 = await request(app).get(`/accounts/${account2Id}/balance`);
 
       expect(balance1.body.balance).toBe(45000);
       expect(balance2.body.balance).toBe(5000);
 
       // Check transaction count in history
-      const txHistory = await request(app).get(`/users/${user1Id}/transactions`);
+      const txHistory = await request(app).get(`/accounts/${account1Id}/transactions`);
       const transferTxs = txHistory.body.filter(
         (tx: any) => tx.idempotency_key === idempotencyKey
       );
@@ -436,7 +458,7 @@ describe('Concurrent Transaction Tests', () => {
   describe('Concurrent Balance Queries', () => {
     beforeEach(async () => {
       await request(app)
-        .post(`/users/${user1Id}/deposit`)
+        .post(`/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 25000,
@@ -446,25 +468,25 @@ describe('Concurrent Transaction Tests', () => {
     it('should handle concurrent balance queries during active transactions', async () => {
       // Start some transactions and balance queries at the same time
       const operations = [
-        request(app).get(`/users/${user1Id}/balance`),
+        request(app).get(`/accounts/${account1Id}/balance`),
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: 5000,
           }),
-        request(app).get(`/users/${user1Id}/balance`),
+        request(app).get(`/accounts/${account1Id}/balance`),
         request(app)
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: user1Id,
-            destination_user_id: user2Id,
+            source_account_id: account1Id,
+            destination_account_id: account2Id,
             amount: 3000,
           }),
-        request(app).get(`/users/${user1Id}/balance`),
+        request(app).get(`/accounts/${account1Id}/balance`),
       ];
 
       const responses = await Promise.all(operations);
@@ -475,13 +497,13 @@ describe('Concurrent Transaction Tests', () => {
       });
 
       // Final balance should be correct
-      const finalBalance = await request(app).get(`/users/${user1Id}/balance`);
+      const finalBalance = await request(app).get(`/accounts/${account1Id}/balance`);
       expect(finalBalance.body.balance).toBe(17000); // 25000 - 5000 - 3000
     });
 
     it('should return consistent balance across multiple concurrent reads', async () => {
       const balanceQueries = Array.from({ length: 10 }, () =>
-        request(app).get(`/users/${user1Id}/balance`)
+        request(app).get(`/accounts/${account1Id}/balance`)
       );
 
       const responses = await Promise.all(balanceQueries);
@@ -494,23 +516,23 @@ describe('Concurrent Transaction Tests', () => {
   });
 
   describe('High Load Scenarios', () => {
-    it('should handle many concurrent operations across multiple users', async () => {
-      // Fund all users
+    it('should handle many concurrent operations across multiple accounts', async () => {
+      // Fund all accounts
       await Promise.all([
         request(app)
-          .post(`/users/${user1Id}/deposit`)
+          .post(`/accounts/${account1Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: 100000,
           }),
         request(app)
-          .post(`/users/${user2Id}/deposit`)
+          .post(`/accounts/${account2Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: 100000,
           }),
         request(app)
-          .post(`/users/${user3Id}/deposit`)
+          .post(`/accounts/${account3Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount: 100000,
@@ -524,8 +546,8 @@ describe('Concurrent Transaction Tests', () => {
             .post('/transactions')
             .send({
               idempotency_key: randomUUID(),
-              source_user_id: user1Id,
-              destination_user_id: user2Id,
+              source_account_id: account1Id,
+              destination_account_id: account2Id,
               amount: 1000,
             })
         ),
@@ -534,8 +556,8 @@ describe('Concurrent Transaction Tests', () => {
             .post('/transactions')
             .send({
               idempotency_key: randomUUID(),
-              source_user_id: user2Id,
-              destination_user_id: user3Id,
+              source_account_id: account2Id,
+              destination_account_id: account3Id,
               amount: 1500,
             })
         ),
@@ -544,13 +566,13 @@ describe('Concurrent Transaction Tests', () => {
             .post('/transactions')
             .send({
               idempotency_key: randomUUID(),
-              source_user_id: user3Id,
-              destination_user_id: user1Id,
+              source_account_id: account3Id,
+              destination_account_id: account1Id,
               amount: 800,
             })
         ),
         ...Array.from({ length: 10 }, () =>
-          request(app).get(`/users/${user1Id}/balance`)
+          request(app).get(`/accounts/${account1Id}/balance`)
         ),
       ];
 
@@ -562,9 +584,9 @@ describe('Concurrent Transaction Tests', () => {
 
       // Verify money conservation
       const balances = await Promise.all([
-        request(app).get(`/users/${user1Id}/balance`),
-        request(app).get(`/users/${user2Id}/balance`),
-        request(app).get(`/users/${user3Id}/balance`),
+        request(app).get(`/accounts/${account1Id}/balance`),
+        request(app).get(`/accounts/${account2Id}/balance`),
+        request(app).get(`/accounts/${account3Id}/balance`),
       ]);
 
       const totalBalance = balances.reduce((sum, b) => sum + b.body.balance, 0);

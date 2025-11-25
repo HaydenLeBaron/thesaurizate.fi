@@ -4,11 +4,11 @@ import { pool } from '../db';
 import { randomUUID } from 'crypto';
 
 describe('Error Handling Tests', () => {
-  let userId: string;
-  let user2Id: string;
+  let accountId: string;
+  let account2Id: string;
 
   beforeEach(async () => {
-    await pool.query('TRUNCATE TABLE transactions, users RESTART IDENTITY CASCADE');
+    await pool.query('TRUNCATE TABLE transactions, accounts, users RESTART IDENTITY CASCADE');
 
     const userResponse = await request(app)
       .post('/users')
@@ -16,7 +16,7 @@ describe('Error Handling Tests', () => {
         email: 'error@example.com',
         password: 'password123',
       });
-    userId = userResponse.body.id;
+    const userId = userResponse.body.id;
 
     const user2Response = await request(app)
       .post('/users')
@@ -24,7 +24,21 @@ describe('Error Handling Tests', () => {
         email: 'error2@example.com',
         password: 'password123',
       });
-    user2Id = user2Response.body.id;
+    const userId2 = user2Response.body.id;
+
+    const accountResponse = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId,
+      });
+    accountId = accountResponse.body.id;
+
+    const account2Response = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId2,
+      });
+    account2Id = account2Response.body.id;
   });
 
   describe('Database Error Handling', () => {
@@ -40,11 +54,11 @@ describe('Error Handling Tests', () => {
       expect(response.body.error).toBe('Email already exists');
     });
 
-    it('should handle non-existent user gracefully for deposits', async () => {
-      const fakeUserId = randomUUID();
+    it('should handle non-existent account gracefully for deposits', async () => {
+      const fakeAccountId = randomUUID();
 
       const response = await request(app)
-        .post(`/users/${fakeUserId}/deposit`)
+        .post(`/accounts/${fakeAccountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
@@ -54,39 +68,39 @@ describe('Error Handling Tests', () => {
       expect(response.body.error).toBe('Internal server error');
     });
 
-    it('should handle non-existent source user in transaction', async () => {
-      const fakeUserId = randomUUID();
+    it('should handle non-existent source account in transaction', async () => {
+      const fakeAccountId = randomUUID();
 
       const response = await request(app)
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: fakeUserId,
-          destination_user_id: userId,
+          source_account_id: fakeAccountId,
+          destination_account_id: accountId,
           amount: 1000,
         })
         .expect(400);
 
-      // Should fail due to insufficient funds (0 balance for non-existent user)
+      // Should fail due to insufficient funds (0 balance for non-existent account)
       expect(response.body.error).toBe('Insufficient funds.');
     });
 
-    it('should handle non-existent destination user in transaction', async () => {
+    it('should handle non-existent destination account in transaction', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
         });
 
-      const fakeUserId = randomUUID();
+      const fakeAccountId = randomUUID();
 
       const response = await request(app)
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: fakeUserId,
+          source_account_id: accountId,
+          destination_account_id: fakeAccountId,
           amount: 1000,
         })
         .expect(500);
@@ -98,7 +112,7 @@ describe('Error Handling Tests', () => {
   describe('Business Logic Error Handling', () => {
     it('should return 400 for insufficient funds', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 5000,
@@ -108,8 +122,8 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 10000,
         })
         .expect(400);
@@ -119,7 +133,7 @@ describe('Error Handling Tests', () => {
 
     it('should prevent self-transfer with validation error', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
@@ -129,8 +143,8 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: userId,
+          source_account_id: accountId,
+          destination_account_id: accountId,
           amount: 1000,
         })
         .expect(400);
@@ -140,7 +154,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle exact balance transfer correctly', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 5000,
@@ -150,21 +164,21 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 5000,
         })
         .expect(201);
 
       expect(response.body.amount).toBe(5000);
 
-      const balance = await request(app).get(`/users/${userId}/balance`);
+      const balance = await request(app).get(`/accounts/${accountId}/balance`);
       expect(balance.body.balance).toBe(0);
     });
 
     it('should reject transfer one cent over balance', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 5000,
@@ -174,8 +188,8 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 5001,
         })
         .expect(400);
@@ -187,7 +201,7 @@ describe('Error Handling Tests', () => {
   describe('Input Validation Error Messages', () => {
     it('should provide clear error for invalid email', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: 'not-an-email',
           password: 'password123',
@@ -200,7 +214,7 @@ describe('Error Handling Tests', () => {
 
     it('should provide clear error for short password', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: 'test@example.com',
           password: '1234567', // 7 chars
@@ -213,7 +227,7 @@ describe('Error Handling Tests', () => {
 
     it('should provide clear error for missing fields', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: 'test@example.com',
         })
@@ -225,7 +239,7 @@ describe('Error Handling Tests', () => {
 
     it('should provide error details for multiple validation failures', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: 'invalid',
           password: 'short',
@@ -248,7 +262,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle POST to balance endpoint (wrong method)', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/balance`)
+        .post(`/accounts/${accountId}/balance`)
         .send({})
         .expect(404);
     });
@@ -263,7 +277,7 @@ describe('Error Handling Tests', () => {
   describe('Idempotency Error Scenarios', () => {
     it('should return same transaction on duplicate idempotency key', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000,
@@ -276,8 +290,8 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: idempotencyKey,
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 1000,
         })
         .expect(201);
@@ -287,8 +301,8 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: idempotencyKey,
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 1000,
         })
         .expect(201);
@@ -301,7 +315,7 @@ describe('Error Handling Tests', () => {
       const idempotencyKey = randomUUID();
 
       const response1 = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: idempotencyKey,
           amount: 10000,
@@ -309,7 +323,7 @@ describe('Error Handling Tests', () => {
         .expect(201);
 
       const response2 = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: idempotencyKey,
           amount: 10000,
@@ -319,13 +333,13 @@ describe('Error Handling Tests', () => {
       expect(response1.body.id).toBe(response2.body.id);
 
       // Balance should only reflect one deposit
-      const balance = await request(app).get(`/users/${userId}/balance`);
+      const balance = await request(app).get(`/accounts/${accountId}/balance`);
       expect(balance.body.balance).toBe(10000);
     });
 
     it('should allow different transactions with different idempotency keys', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000,
@@ -335,8 +349,8 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 1000,
         })
         .expect(201);
@@ -345,15 +359,15 @@ describe('Error Handling Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 1000,
         })
         .expect(201);
 
       expect(response1.body.id).not.toBe(response2.body.id);
 
-      const balance = await request(app).get(`/users/${userId}/balance`);
+      const balance = await request(app).get(`/accounts/${accountId}/balance`);
       expect(balance.body.balance).toBe(48000); // 50000 - 1000 - 1000
     });
   });
@@ -422,26 +436,26 @@ describe('Error Handling Tests', () => {
   });
 
   describe('Transaction History Error Handling', () => {
-    it('should return empty array for user with no transactions', async () => {
+    it('should return empty array for account with no transactions', async () => {
       const response = await request(app)
-        .get(`/users/${userId}/transactions`)
+        .get(`/accounts/${accountId}/transactions`)
         .expect(200);
 
       expect(response.body).toEqual([]);
     });
 
-    it('should handle invalid user ID in transaction history', async () => {
+    it('should handle invalid account ID in transaction history', async () => {
       const response = await request(app)
-        .get('/users/invalid-id/transactions')
+        .get('/accounts/invalid-id/transactions')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
     });
 
-    it('should handle non-existent user ID in transaction history', async () => {
-      const fakeUserId = randomUUID();
+    it('should handle non-existent account ID in transaction history', async () => {
+      const fakeAccountId = randomUUID();
       const response = await request(app)
-        .get(`/users/${fakeUserId}/transactions`)
+        .get(`/accounts/${fakeAccountId}/transactions`)
         .expect(200);
 
       expect(response.body).toEqual([]);
@@ -449,10 +463,10 @@ describe('Error Handling Tests', () => {
   });
 
   describe('Balance Query Error Handling', () => {
-    it('should return zero for non-existent user balance', async () => {
-      const fakeUserId = randomUUID();
+    it('should return zero for non-existent account balance', async () => {
+      const fakeAccountId = randomUUID();
       const response = await request(app)
-        .get(`/users/${fakeUserId}/balance`)
+        .get(`/accounts/${fakeAccountId}/balance`)
         .expect(200);
 
       expect(response.body.balance).toBe(0);
@@ -460,7 +474,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle invalid date format in balance query', async () => {
       const response = await request(app)
-        .get(`/users/${userId}/balance?date=invalid-date`)
+        .get(`/accounts/${accountId}/balance?date=invalid-date`)
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -468,7 +482,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle malformed query parameters', async () => {
       const response = await request(app)
-        .get(`/users/${userId}/balance?date=2025-13-45T99:99:99Z`)
+        .get(`/accounts/${accountId}/balance?date=2025-13-45T99:99:99Z`)
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -478,9 +492,9 @@ describe('Error Handling Tests', () => {
   describe('Error Response Consistency', () => {
     it('should always include error field in error responses', async () => {
       const errorEndpoints = [
-        { method: 'post', url: '/users', body: {} },
+        { method: 'post', url: '/accounts', body: {} },
         { method: 'post', url: '/transactions', body: {} },
-        { method: 'get', url: '/users/invalid/balance', body: undefined },
+        { method: 'get', url: '/accounts/invalid/balance', body: undefined },
       ];
 
       for (const endpoint of errorEndpoints) {
@@ -499,7 +513,7 @@ describe('Error Handling Tests', () => {
 
     it('should include details for validation errors', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: 'invalid',
           password: 'short',
@@ -513,7 +527,7 @@ describe('Error Handling Tests', () => {
 
     it('should not leak sensitive information in error messages', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: 'test@example.com',
           password: 'short',
@@ -529,7 +543,7 @@ describe('Error Handling Tests', () => {
   describe('Concurrent Error Scenarios', () => {
     it('should handle concurrent insufficient fund scenarios correctly', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
@@ -539,14 +553,14 @@ describe('Error Handling Tests', () => {
       const transfers = [
         request(app).post('/transactions').send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 8000,
         }),
         request(app).post('/transactions').send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 8000,
         }),
       ];

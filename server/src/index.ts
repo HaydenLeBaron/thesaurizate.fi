@@ -4,6 +4,7 @@ import './init';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import transactionsRouter from './routes/transactions';
+import accountsRouter from './routes/accounts';
 import usersRouter from './routes/users';
 import { openApiSpec } from './openapi';
 
@@ -18,6 +19,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // Routes
 app.use('/', transactionsRouter);
+app.use('/', accountsRouter);
 app.use('/', usersRouter);
 
 // OpenAPI spec endpoint

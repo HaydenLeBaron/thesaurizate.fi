@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { executeTransaction, executeDeposit, getUserBalance, getUserBalanceOnDate } from '../services/transactions';
-import { CreateTransactionSchema, CreateDepositSchema, UserIdPathSchema, BalanceQuerySchema } from '../schemas/transactions';
+import { executeTransaction, executeDeposit, getAccountBalance, getAccountBalanceOnDate } from '../services/transactions';
+import { CreateTransactionSchema, CreateDepositSchema, AccountIdPathSchema, BalanceQuerySchema } from '../schemas/transactions';
 
 const router = Router();
 
@@ -15,8 +15,8 @@ router.post('/transactions', async (req, res) => {
 
     const transaction = await executeTransaction({
       idempotencyKey: validatedBody.idempotency_key,
-      sourceUserId: validatedBody.source_user_id,
-      destinationUserId: validatedBody.destination_user_id,
+      sourceAccountId: validatedBody.source_account_id,
+      destinationAccountId: validatedBody.destination_account_id,
       amount: validatedBody.amount,
     });
 
@@ -38,23 +38,23 @@ router.post('/transactions', async (req, res) => {
 });
 
 /**
- * GET /users/:id/balance
- * Get the current balance for a user (or balance at a specific date if ?date= query param provided)
+ * GET /accounts/:id/balance
+ * Get the current balance for a account (or balance at a specific date if ?date= query param provided)
  */
-router.get('/users/:id/balance', async (req, res) => {
+router.get('/accounts/:id/balance', async (req, res) => {
   try {
-    const validatedParams = UserIdPathSchema.parse(req.params);
+    const validatedParams = AccountIdPathSchema.parse(req.params);
     const validatedQuery = BalanceQuerySchema.parse(req.query);
 
     let balance: number;
 
     if (validatedQuery.date) {
-      balance = await getUserBalanceOnDate(validatedParams.id, new Date(validatedQuery.date));
+      balance = await getAccountBalanceOnDate(validatedParams.id, new Date(validatedQuery.date));
     } else {
-      balance = await getUserBalance(validatedParams.id);
+      balance = await getAccountBalance(validatedParams.id);
     }
 
-    res.json({ user_id: validatedParams.id, balance });
+    res.json({ account_id: validatedParams.id, balance });
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: 'Validation error', details: error.issues });
@@ -66,12 +66,12 @@ router.get('/users/:id/balance', async (req, res) => {
 });
 
 /**
- * GET /users/:id/transactions
- * Get transaction history for a user
+ * GET /accounts/:id/transactions
+ * Get transaction history for a account
  */
-router.get('/users/:id/transactions', async (req, res) => {
+router.get('/accounts/:id/transactions', async (req, res) => {
   try {
-    const validatedParams = UserIdPathSchema.parse(req.params);
+    const validatedParams = AccountIdPathSchema.parse(req.params);
 
     // Import db here to avoid circular dependencies
     const db = await import('zapatos/db');
@@ -79,8 +79,8 @@ router.get('/users/:id/transactions', async (req, res) => {
 
     const transactions = await db.sql`
       SELECT * FROM ${'transactions'}
-      WHERE ${{ source_user_id: validatedParams.id }}
-         OR ${{ destination_user_id: validatedParams.id }}
+      WHERE ${{ source_account_id: validatedParams.id }}
+         OR ${{ destination_account_id: validatedParams.id }}
       ORDER BY ${'created_at'} DESC
     `.run(pool);
 
@@ -96,17 +96,17 @@ router.get('/users/:id/transactions', async (req, res) => {
 });
 
 /**
- * POST /users/:id/deposit
- * Deposit money into a user's account (inject money into the system)
+ * POST /accounts/:id/deposit
+ * Deposit money into a account's account (inject money into the system)
  */
-router.post('/users/:id/deposit', async (req, res) => {
+router.post('/accounts/:id/deposit', async (req, res) => {
   try {
-    const validatedParams = UserIdPathSchema.parse(req.params);
+    const validatedParams = AccountIdPathSchema.parse(req.params);
     const validatedBody = CreateDepositSchema.parse(req.body);
 
     const transaction = await executeDeposit({
       idempotencyKey: validatedBody.idempotency_key,
-      userId: validatedParams.id,
+      accountId: validatedParams.id,
       amount: validatedBody.amount,
     });
 

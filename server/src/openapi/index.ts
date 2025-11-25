@@ -4,11 +4,11 @@ import {
   CreateTransactionSchema,
   TransactionSchema,
   CreateDepositSchema,
-  UserBalanceSchema,
+  AccountBalanceSchema,
   BalanceQuerySchema,
-  UserIdPathSchema,
+  AccountIdPathSchema,
 } from '../schemas/transactions';
-import { CreateUserSchema, UserSchema } from '../schemas/users';
+import { CreateAccountSchema, AccountSchema } from '../schemas/accounts';
 
 export const openApiSpec = createDocument({
   openapi: '3.1.0',
@@ -24,24 +24,24 @@ export const openApiSpec = createDocument({
     },
   ],
   paths: {
-    '/users': {
+    '/accounts': {
       post: {
-        summary: 'Create a new user',
-        description: 'Register a new user account',
-        tags: ['Users'],
+        summary: 'Create a new account',
+        description: 'Register a new account account',
+        tags: ['Accounts'],
         requestBody: {
           content: {
             'application/json': {
-              schema: CreateUserSchema,
+              schema: CreateAccountSchema,
             },
           },
         },
         responses: {
           '201': {
-            description: 'User created successfully',
+            description: 'Account created successfully',
             content: {
               'application/json': {
-                schema: UserSchema,
+                schema: AccountSchema,
               },
             },
           },
@@ -60,7 +60,7 @@ export const openApiSpec = createDocument({
     '/transactions': {
       post: {
         summary: 'Create a new transaction',
-        description: 'Execute a financial transfer between two users with JIT balance verification',
+        description: 'Execute a financial transfer between two accounts with JIT balance verification',
         tags: ['Transactions'],
         requestBody: {
           content: {
@@ -87,21 +87,21 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/users/{id}/balance': {
+    '/accounts/{id}/balance': {
       get: {
-        summary: 'Get user balance',
+        summary: 'Get account balance',
         description: 'Get current balance or historical balance at a specific date',
         tags: ['Transactions'],
         requestParams: {
-          path: UserIdPathSchema,
+          path: AccountIdPathSchema,
           query: BalanceQuerySchema,
         },
         responses: {
           '200': {
-            description: 'User balance',
+            description: 'Account balance',
             content: {
               'application/json': {
-                schema: UserBalanceSchema,
+                schema: AccountBalanceSchema,
               },
             },
           },
@@ -114,13 +114,13 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/users/{id}/transactions': {
+    '/accounts/{id}/transactions': {
       get: {
-        summary: 'Get user transaction history',
-        description: 'Get all transactions where user is source or destination',
+        summary: 'Get account transaction history',
+        description: 'Get all transactions where account is source or destination',
         tags: ['Transactions'],
         requestParams: {
-          path: UserIdPathSchema,
+          path: AccountIdPathSchema,
         },
         responses: {
           '200': {
@@ -140,13 +140,13 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/users/{id}/deposit': {
+    '/accounts/{id}/deposit': {
       post: {
-        summary: 'Deposit money into user account',
-        description: 'Inject money into the system by depositing funds into a user account',
+        summary: 'Deposit money into account account',
+        description: 'Inject money into the system by depositing funds into a account account',
         tags: ['Transactions'],
         requestParams: {
-          path: UserIdPathSchema,
+          path: AccountIdPathSchema,
         },
         requestBody: {
           content: {

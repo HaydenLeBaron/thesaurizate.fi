@@ -83,7 +83,7 @@ Zapatos Types    pgzod Schemas    Custom Schemas
 1. **SQL Migrations** → Database schema definition (raw SQL)
 2. **Zapatos** → Generates TypeScript types from database (`zapatos/schema.d.ts`)
 3. **pgzod** → Generates Zod schemas from database (`schemas/pgzod/*`)
-4. **Custom Schemas** → Manual Zod schemas for API contracts (`schemas/users.ts`, `schemas/transactions.ts`)
+4. **Custom Schemas** → Manual Zod schemas for API contracts (`schemas/accounts.ts`, `schemas/transactions.ts`)
 5. **OpenAPI** → Manual specification using Zod schemas (`openapi/index.ts`)
 
 ## Directory Structure
@@ -111,16 +111,16 @@ thesaurizate.fi/
         │   └── migrate.ts      # Migration runner script
         ├── routes/
         │   ├── transactions.ts # Transaction endpoints
-        │   └── users.ts        # User endpoints
+        │   └── accounts.ts        # Account endpoints
         ├── services/
         │   └── transactions.ts # Transaction business logic
         ├── schemas/
-        │   ├── users.ts        # User Zod schemas for API
+        │   ├── accounts.ts        # Account Zod schemas for API
         │   ├── transactions.ts # Transaction Zod schemas for API
         │   └── pgzod/          # Auto-generated Zod schemas
         │       ├── index.ts
-        │       ├── usersRead.ts
-        │       ├── usersWrite.ts
+        │       ├── accountsRead.ts
+        │       ├── accountsWrite.ts
         │       ├── transactionsRead.ts
         │       └── transactionsWrite.ts
         ├── openapi/
@@ -129,7 +129,7 @@ thesaurizate.fi/
             ├── setup.ts
             ├── app.ts
             ├── health.test.ts
-            ├── users.test.ts
+            ├── accounts.test.ts
             ├── transactions.test.ts
             ├── edge-cases.test.ts
             ├── balance-accuracy.test.ts
@@ -180,7 +180,7 @@ npm run db:generate:zod
 ### Request Lifecycle
 
 1. **Request arrives** → Express middleware
-2. **Route matching** → Express router ([routes/users.ts](server/src/routes/users.ts), [routes/transactions.ts](server/src/routes/transactions.ts))
+2. **Route matching** → Express router ([routes/accounts.ts](server/src/routes/accounts.ts), [routes/transactions.ts](server/src/routes/transactions.ts))
 3. **Validation** → Zod schema parsing (`.safeParse()`)
 4. **Business logic** → Service layer ([services/transactions.ts](server/src/services/transactions.ts))
 5. **Database query** → Zapatos type-safe queries
@@ -198,11 +198,11 @@ npm run db:generate:zod
 
 | Method | Endpoint | Description | Validation |
 |--------|----------|-------------|------------|
-| POST | `/users` | Create a new user | `CreateUserSchema` |
-| POST | `/transactions` | Transfer funds between users | `CreateTransactionSchema` |
-| POST | `/users/:id/deposit` | Deposit funds into account | `CreateDepositSchema` |
-| GET | `/users/:id/balance` | Get current/historical balance | `UserIdPathSchema`, `BalanceQuerySchema` |
-| GET | `/users/:id/transactions` | Get transaction history | `UserIdPathSchema` |
+| POST | `/accounts` | Create a new account | `CreateAccountSchema` |
+| POST | `/transactions` | Transfer funds between accounts | `CreateTransactionSchema` |
+| POST | `/accounts/:id/deposit` | Deposit funds into account | `CreateDepositSchema` |
+| GET | `/accounts/:id/balance` | Get current/historical balance | `AccountIdPathSchema`, `BalanceQuerySchema` |
+| GET | `/accounts/:id/transactions` | Get transaction history | `AccountIdPathSchema` |
 | GET | `/health` | Health check | None |
 | GET | `/api-docs` | Swagger UI | None |
 | GET | `/openapi.json` | OpenAPI spec | None |
@@ -215,9 +215,9 @@ The [init.ts](server/src/init.ts#L1-6) file **must** be imported first in [index
 
 ### Schema Layers
 
-1. **Database Layer**: Zapatos types (`zapatos.schema.users.Selectable`, `zapatos.schema.transactions.Selectable`)
-2. **Validation Layer**: pgzod schemas (`usersWrite`, `transactionsWrite`)
-3. **API Layer**: Custom Zod schemas with OpenAPI metadata (`UserSchema`, `TransactionSchema`)
+1. **Database Layer**: Zapatos types (`zapatos.schema.accounts.Selectable`, `zapatos.schema.transactions.Selectable`)
+2. **Validation Layer**: pgzod schemas (`accountsWrite`, `transactionsWrite`)
+3. **API Layer**: Custom Zod schemas with OpenAPI metadata (`AccountSchema`, `TransactionSchema`)
 
 ### Example: Type Flow for Creating a Transaction
 
@@ -228,13 +228,13 @@ const parseResult = CreateTransactionSchema.parse(req.body);
 // 2. Business logic (Service layer)
 const transaction = await executeTransaction({
   idempotencyKey: parseResult.idempotency_key,
-  sourceUserId: parseResult.source_user_id,
-  destinationUserId: parseResult.destination_user_id,
+  sourceAccountId: parseResult.source_account_id,
+  destinationAccountId: parseResult.destination_account_id,
   amount: parseResult.amount,
 });
 
 // 3. Database operations (Zapatos layer)
-// - Row-level locks on source/destination users
+// - Row-level locks on source/destination accounts
 // - JIT balance calculation
 // - Transaction insertion
 // Type: zapatos.schema.transactions.Selectable
@@ -257,13 +257,13 @@ The system implements an **immutable, append-only transaction ledger** as the si
 ### Transaction Types
 
 1. **Transfers** (`POST /transactions`):
-   - Move funds between two users
-   - `source_user_id` → `destination_user_id`
+   - Move funds between two accounts
+   - `source_account_id` → `destination_account_id`
    - Requires sufficient balance in source account
 
-2. **Deposits** (`POST /users/:id/deposit`):
+2. **Deposits** (`POST /accounts/:id/deposit`):
    - Inject money into the system
-   - `source_user_id` is NULL (indicating external source)
+   - `source_account_id` is NULL (indicating external source)
    - Always succeeds (no balance check)
 
 ### Balance Calculation
@@ -272,25 +272,25 @@ Balances are computed Just-In-Time using PostgreSQL functions:
 
 ```sql
 -- Current balance
-SELECT public.get_current_balance(user_id);
+SELECT public.get_current_balance(account_id);
 
 -- Historical balance (point-in-time)
-SELECT public.get_balance_on_date(user_id, timestamp);
+SELECT public.get_balance_on_date(account_id, timestamp);
 ```
 
 **Balance Formula**:
 ```
 balance = SUM(incoming) - SUM(outgoing)
 
-incoming  = WHERE destination_user_id = user_id
-outgoing  = WHERE source_user_id = user_id
+incoming  = WHERE destination_account_id = account_id
+outgoing  = WHERE source_account_id = account_id
 ```
 
 ### Concurrency Control
 
 The system uses PostgreSQL row-level locks to ensure transaction safety:
 
-1. **Lock Acquisition**: `SELECT FOR UPDATE` on both source and destination users
+1. **Lock Acquisition**: `SELECT FOR UPDATE` on both source and destination accounts
 2. **Deterministic Ordering**: Locks acquired in UUID order to prevent deadlocks
 3. **Balance Check**: JIT calculation after acquiring locks
 4. **Transaction Insert**: Atomically append to ledger
@@ -326,8 +326,8 @@ The OpenAPI spec is **manually defined** in [openapi/index.ts](server/src/openap
 ```typescript
 export const CreateTransactionSchema = z.object({
   idempotency_key: z.string().uuid(),
-  source_user_id: z.string().uuid(),
-  destination_user_id: z.string().uuid(),
+  source_account_id: z.string().uuid(),
+  destination_account_id: z.string().uuid(),
   amount: z.number().int().positive(),
 }).meta({
   description: 'Create a new financial transaction',
@@ -416,9 +416,9 @@ npm run dev              # Start Docker services
 
 ### Tables
 
-#### `users` (public schema)
+#### `accounts` (public schema)
 ```sql
-CREATE TABLE users (
+CREATE TABLE accounts (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email        TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
@@ -427,15 +427,15 @@ CREATE TABLE users (
 );
 ```
 
-**Purpose**: Store user identity and credentials. Each user has exactly one implicit account.
+**Purpose**: Store account identity and credentials. Each account has exactly one implicit account.
 
 #### `transactions` (public schema)
 ```sql
 CREATE TABLE transactions (
   id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   idempotency_key      UUID NOT NULL UNIQUE,
-  source_user_id       UUID REFERENCES users(id),  -- NULL = deposit
-  destination_user_id  UUID NOT NULL REFERENCES users(id),
+  source_account_id       UUID REFERENCES accounts(id),  -- NULL = deposit
+  destination_account_id  UUID NOT NULL REFERENCES accounts(id),
   amount               BIGINT NOT NULL CHECK (amount > 0),
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -444,17 +444,17 @@ CREATE TABLE transactions (
 **Purpose**: Immutable, append-only ledger of all financial movements. Single source of truth for balances.
 
 **Indexes**:
-- `idx_transactions_user_balance` - Composite index for JIT balance calculation
-- `idx_transactions_source` - Transaction history for source users
-- `idx_transactions_dest` - Transaction history for destination users
+- `idx_transactions_account_balance` - Composite index for JIT balance calculation
+- `idx_transactions_source` - Transaction history for source accounts
+- `idx_transactions_dest` - Transaction history for destination accounts
 
 #### `failed_transactions` (private schema)
 ```sql
 CREATE TABLE private.failed_transactions (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   idempotency_key      UUID NOT NULL,
-  source_user_id       UUID REFERENCES public.users(id),
-  destination_user_id  UUID REFERENCES public.users(id),
+  source_account_id       UUID REFERENCES public.accounts(id),
+  destination_account_id  UUID REFERENCES public.accounts(id),
   amount               INTEGER NOT NULL CHECK (amount > 0),
   error_message        TEXT NOT NULL,
   retry_count          INTEGER NOT NULL DEFAULT 0,
@@ -474,17 +474,17 @@ CREATE TABLE private.failed_transactions (
 
 ### Functions
 
-#### `get_current_balance(user_id UUID) → BIGINT`
+#### `get_current_balance(account_id UUID) → BIGINT`
 ```sql
-SELECT public.get_current_balance(user_id);
+SELECT public.get_current_balance(account_id);
 ```
-- Returns current balance for a user
+- Returns current balance for a account
 - Computed from transaction ledger
 - STABLE PARALLEL SAFE for performance
 
-#### `get_balance_on_date(user_id UUID, date TIMESTAMPTZ) → BIGINT`
+#### `get_balance_on_date(account_id UUID, date TIMESTAMPTZ) → BIGINT`
 ```sql
-SELECT public.get_balance_on_date(user_id, '2025-01-01'::timestamptz);
+SELECT public.get_balance_on_date(account_id, '2025-01-01'::timestamptz);
 ```
 - Returns historical balance at a point in time
 - Enables time-travel queries
@@ -492,7 +492,7 @@ SELECT public.get_balance_on_date(user_id, '2025-01-01'::timestamptz);
 
 ### Field Naming Convention
 
-**All fields use `snake_case`** (e.g., `created_at`, `source_user_id`) to match PostgreSQL conventions. This is maintained throughout:
+**All fields use `snake_case`** (e.g., `created_at`, `source_account_id`) to match PostgreSQL conventions. This is maintained throughout:
 - Database columns
 - Zapatos types
 - pgzod schemas
@@ -563,7 +563,7 @@ SELECT public.get_balance_on_date(user_id, '2025-01-01'::timestamptz);
 - **Logging**: Errors logged to console for debugging
 
 ### Not Found
-- **404 Not Found**: Resource doesn't exist (future: user lookup)
+- **404 Not Found**: Resource doesn't exist (future: account lookup)
 
 ### Migration Errors
 - **Automatic Rollback**: Transaction rollback on migration failure
@@ -576,7 +576,7 @@ SELECT public.get_balance_on_date(user_id, '2025-01-01'::timestamptz);
 Comprehensive test suite covering all critical paths:
 
 1. **Health Tests** (`health.test.ts`): API health check validation
-2. **User Tests** (`users.test.ts`): User creation and balance operations
+2. **Account Tests** (`accounts.test.ts`): Account creation and balance operations
 3. **Transaction Tests** (`transactions.test.ts`): Transfer and deposit flows
 4. **Edge Cases** (`edge-cases.test.ts`): Boundary conditions and error cases
 5. **Balance Accuracy** (`balance-accuracy.test.ts`): Ledger calculation verification
@@ -595,10 +595,10 @@ npm run test:coverage     # Coverage report
 
 The `k6-stress-test.js` configuration simulates production-like load:
 
-- **Setup**: Creates 10,000 test users with initial balances
-- **VUs**: Ramps up to 1,000 concurrent virtual users
+- **Setup**: Creates 10,000 test accounts with initial balances
+- **VUs**: Ramps up to 1,000 concurrent virtual accounts
 - **Duration**: 30 seconds sustained load
-- **Operations**: Random transactions between users
+- **Operations**: Random transactions between accounts
 - **Thresholds**:
   - 95th percentile response time < 850ms
   - Failure rate < 10%
@@ -644,7 +644,7 @@ k6 run k6-stress-test.js
 - **Stateless**: Horizontal scaling ready
 
 ### Balance Calculation
-- **Optimized Indexes**: `idx_transactions_user_balance` covers common queries
+- **Optimized Indexes**: `idx_transactions_account_balance` covers common queries
 - **Function Inlining**: PostgreSQL can inline simple functions
 - **Materialized Views**: Future optimization for read-heavy workloads
 

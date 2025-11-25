@@ -4,10 +4,10 @@ import { pool } from '../db';
 import { randomUUID } from 'crypto';
 
 describe('Edge Cases and Boundary Tests', () => {
-  let userId: string;
+  let accountId: string;
 
   beforeEach(async () => {
-    await pool.query('TRUNCATE TABLE transactions, users RESTART IDENTITY CASCADE');
+    await pool.query('TRUNCATE TABLE transactions, accounts, users RESTART IDENTITY CASCADE');
 
     const userResponse = await request(app)
       .post('/users')
@@ -15,7 +15,14 @@ describe('Edge Cases and Boundary Tests', () => {
         email: 'edgecase@example.com',
         password: 'password123',
       });
-    userId = userResponse.body.id;
+    const userId = userResponse.body.id;
+
+    const accountResponse = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId,
+      });
+    accountId = accountResponse.body.id;
   });
 
   describe('Transaction Amount Edge Cases', () => {
@@ -24,8 +31,8 @@ describe('Edge Cases and Boundary Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: randomUUID(),
+          source_account_id: accountId,
+          destination_account_id: randomUUID(),
           amount: 0,
         })
         .expect(400);
@@ -35,7 +42,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject deposit with zero amount', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 0,
@@ -50,7 +57,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
       // Deposit large amount
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: largeAmount,
@@ -59,7 +66,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
       // Check balance
       const balanceResponse = await request(app)
-        .get(`/users/${userId}/balance`)
+        .get(`/accounts/${accountId}/balance`)
         .expect(200);
 
       expect(balanceResponse.body.balance).toBe(largeAmount);
@@ -67,7 +74,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should handle minimum valid amount (1 cent)', async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 1,
@@ -75,7 +82,7 @@ describe('Edge Cases and Boundary Tests', () => {
         .expect(201);
 
       const balanceResponse = await request(app)
-        .get(`/users/${userId}/balance`)
+        .get(`/accounts/${accountId}/balance`)
         .expect(200);
 
       expect(balanceResponse.body.balance).toBe(1);
@@ -83,7 +90,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject negative amounts', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: -100,
@@ -95,7 +102,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject decimal amounts', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 100.50,
@@ -107,9 +114,9 @@ describe('Edge Cases and Boundary Tests', () => {
   });
 
   describe('UUID Validation Edge Cases', () => {
-    it('should reject malformed UUID for user id', async () => {
+    it('should reject malformed UUID for account id', async () => {
       const response = await request(app)
-        .get('/users/not-a-uuid/balance')
+        .get('/accounts/not-a-uuid/balance')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -117,7 +124,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject malformed UUID for idempotency key', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: 'not-a-uuid',
           amount: 1000,
@@ -130,7 +137,7 @@ describe('Edge Cases and Boundary Tests', () => {
     it('should accept valid v4 UUID', async () => {
       const validUUID = randomUUID();
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: validUUID,
           amount: 1000,
@@ -142,7 +149,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject empty string as UUID', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: '',
           amount: 1000,
@@ -157,7 +164,7 @@ describe('Edge Cases and Boundary Tests', () => {
     it('should accept valid email formats', async () => {
       const validEmails = [
         'test@example.com',
-        'user.name+tag@example.co.uk',
+        'account.name+tag@example.co.uk',
         'test123@test-domain.org',
       ];
 
@@ -178,9 +185,9 @@ describe('Edge Cases and Boundary Tests', () => {
       const invalidEmails = [
         'notanemail',
         '@example.com',
-        'user@',
-        'user @example.com',
-        'user@.com',
+        'account@',
+        'account @example.com',
+        'account@.com',
       ];
 
       for (const email of invalidEmails) {
@@ -263,7 +270,7 @@ describe('Edge Cases and Boundary Tests', () => {
   describe('Date Query Edge Cases', () => {
     beforeEach(async () => {
       await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
@@ -273,7 +280,7 @@ describe('Edge Cases and Boundary Tests', () => {
     it('should handle future date query', async () => {
       const futureDate = new Date('2099-12-31T23:59:59Z').toISOString();
       const response = await request(app)
-        .get(`/users/${userId}/balance?date=${futureDate}`)
+        .get(`/accounts/${accountId}/balance?date=${futureDate}`)
         .expect(200);
 
       expect(response.body.balance).toBe(10000);
@@ -282,7 +289,7 @@ describe('Edge Cases and Boundary Tests', () => {
     it('should handle past date query before any transactions', async () => {
       const pastDate = new Date('2000-01-01T00:00:00Z').toISOString();
       const response = await request(app)
-        .get(`/users/${userId}/balance?date=${pastDate}`)
+        .get(`/accounts/${accountId}/balance?date=${pastDate}`)
         .expect(200);
 
       expect(response.body.balance).toBe(0);
@@ -290,7 +297,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject invalid ISO 8601 date format', async () => {
       const response = await request(app)
-        .get(`/users/${userId}/balance?date=2025-13-45`)
+        .get(`/accounts/${accountId}/balance?date=2025-13-45`)
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -305,7 +312,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
       for (const date of validDates) {
         const response = await request(app)
-          .get(`/users/${userId}/balance?date=${date}`)
+          .get(`/accounts/${accountId}/balance?date=${date}`)
           .expect(200);
 
         expect(response.body).toHaveProperty('balance');
@@ -316,7 +323,7 @@ describe('Edge Cases and Boundary Tests', () => {
   describe('Empty and Null Values', () => {
     it('should reject null values in required fields', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: null,
           password: 'password123',
@@ -328,7 +335,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject undefined values in required fields', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           password: 'password123',
         })
@@ -339,7 +346,7 @@ describe('Edge Cases and Boundary Tests', () => {
 
     it('should reject empty object body', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({})
         .expect(400);
 

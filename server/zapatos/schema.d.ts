@@ -23,6 +23,149 @@ declare module 'zapatos/schema' {
   /* --- tables --- */
 
   /**
+   * **accounts**
+   * - Table in database
+   */
+  export namespace accounts {
+    export type Table = 'accounts';
+    export interface Selectable {
+      /**
+      * **accounts.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at: Date;
+      /**
+      * **accounts.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id: string;
+      /**
+      * **accounts.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at: Date;
+      /**
+      * **accounts.user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      user_id: string;
+    }
+    export interface JSONSelectable {
+      /**
+      * **accounts.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at: db.TimestampTzString;
+      /**
+      * **accounts.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id: string;
+      /**
+      * **accounts.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at: db.TimestampTzString;
+      /**
+      * **accounts.user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      user_id: string;
+    }
+    export interface Whereable {
+      /**
+      * **accounts.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **accounts.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **accounts.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn>;
+      /**
+      * **accounts.user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      user_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+    }
+    export interface Insertable {
+      /**
+      * **accounts.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment;
+      /**
+      * **accounts.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.DefaultType | db.SQLFragment;
+      /**
+      * **accounts.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment;
+      /**
+      * **accounts.user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      user_id: string | db.Parameter<string> | db.SQLFragment;
+    }
+    export interface Updatable {
+      /**
+      * **accounts.created_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **accounts.id**
+      * - `uuid` in database
+      * - `NOT NULL`, default: `uuid_generate_v4()`
+      */
+      id?: string | db.Parameter<string> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **accounts.updated_at**
+      * - `timestamptz` in database
+      * - `NOT NULL`, default: `now()`
+      */
+      updated_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
+      /**
+      * **accounts.user_id**
+      * - `uuid` in database
+      * - `NOT NULL`, no default
+      */
+      user_id?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+    }
+    export type UniqueIndex = 'accounts_pkey';
+    export type Column = keyof Selectable;
+    export type OnlyCols<T extends readonly Column[]> = Pick<Selectable, T[number]>;
+    export type SQLExpression = Table | db.ColumnNames<Updatable | (keyof Updatable)[]> | db.ColumnValues<Updatable> | Whereable | Column | db.ParentColumn | db.GenericSQLExpression;
+    export type SQL = SQLExpression | SQLExpression[];
+  }
+
+  /**
    * **pgmigrations**
    * - Table in database
    */
@@ -155,11 +298,11 @@ declare module 'zapatos/schema' {
       */
       created_at: Date;
       /**
-      * **transactions.destination_user_id**
+      * **transactions.destination_account_id**
       * - `uuid` in database
       * - `NOT NULL`, no default
       */
-      destination_user_id: string;
+      destination_account_id: string;
       /**
       * **transactions.id**
       * - `uuid` in database
@@ -173,11 +316,11 @@ declare module 'zapatos/schema' {
       */
       idempotency_key: string;
       /**
-      * **transactions.source_user_id**
+      * **transactions.source_account_id**
       * - `uuid` in database
       * - Nullable, no default
       */
-      source_user_id: string | null;
+      source_account_id: string | null;
     }
     export interface JSONSelectable {
       /**
@@ -193,11 +336,11 @@ declare module 'zapatos/schema' {
       */
       created_at: db.TimestampTzString;
       /**
-      * **transactions.destination_user_id**
+      * **transactions.destination_account_id**
       * - `uuid` in database
       * - `NOT NULL`, no default
       */
-      destination_user_id: string;
+      destination_account_id: string;
       /**
       * **transactions.id**
       * - `uuid` in database
@@ -211,11 +354,11 @@ declare module 'zapatos/schema' {
       */
       idempotency_key: string;
       /**
-      * **transactions.source_user_id**
+      * **transactions.source_account_id**
       * - `uuid` in database
       * - Nullable, no default
       */
-      source_user_id: string | null;
+      source_account_id: string | null;
     }
     export interface Whereable {
       /**
@@ -231,11 +374,11 @@ declare module 'zapatos/schema' {
       */
       created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.SQLFragment | db.ParentColumn>;
       /**
-      * **transactions.destination_user_id**
+      * **transactions.destination_account_id**
       * - `uuid` in database
       * - `NOT NULL`, no default
       */
-      destination_user_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      destination_account_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
       * **transactions.id**
       * - `uuid` in database
@@ -249,11 +392,11 @@ declare module 'zapatos/schema' {
       */
       idempotency_key?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
       /**
-      * **transactions.source_user_id**
+      * **transactions.source_account_id**
       * - `uuid` in database
       * - Nullable, no default
       */
-      source_user_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
+      source_account_id?: string | db.Parameter<string> | db.SQLFragment | db.ParentColumn | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment | db.ParentColumn>;
     }
     export interface Insertable {
       /**
@@ -269,11 +412,11 @@ declare module 'zapatos/schema' {
       */
       created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment;
       /**
-      * **transactions.destination_user_id**
+      * **transactions.destination_account_id**
       * - `uuid` in database
       * - `NOT NULL`, no default
       */
-      destination_user_id: string | db.Parameter<string> | db.SQLFragment;
+      destination_account_id: string | db.Parameter<string> | db.SQLFragment;
       /**
       * **transactions.id**
       * - `uuid` in database
@@ -287,11 +430,11 @@ declare module 'zapatos/schema' {
       */
       idempotency_key: string | db.Parameter<string> | db.SQLFragment;
       /**
-      * **transactions.source_user_id**
+      * **transactions.source_account_id**
       * - `uuid` in database
       * - Nullable, no default
       */
-      source_user_id?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
+      source_account_id?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment;
     }
     export interface Updatable {
       /**
@@ -307,11 +450,11 @@ declare module 'zapatos/schema' {
       */
       created_at?: (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment | db.SQLFragment<any, (db.TimestampTzString | Date) | db.Parameter<(db.TimestampTzString | Date)> | db.DefaultType | db.SQLFragment>;
       /**
-      * **transactions.destination_user_id**
+      * **transactions.destination_account_id**
       * - `uuid` in database
       * - `NOT NULL`, no default
       */
-      destination_user_id?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
+      destination_account_id?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
       * **transactions.id**
       * - `uuid` in database
@@ -325,11 +468,11 @@ declare module 'zapatos/schema' {
       */
       idempotency_key?: string | db.Parameter<string> | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | db.SQLFragment>;
       /**
-      * **transactions.source_user_id**
+      * **transactions.source_account_id**
       * - `uuid` in database
       * - Nullable, no default
       */
-      source_user_id?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
+      source_account_id?: string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment | db.SQLFragment<any, string | db.Parameter<string> | null | db.DefaultType | db.SQLFragment>;
     }
     export type UniqueIndex = 'transactions_idempotency_key_key' | 'transactions_pkey';
     export type Column = keyof Selectable;
@@ -514,20 +657,20 @@ declare module 'zapatos/schema' {
   /* --- aggregate types --- */
 
   export namespace public {  
-    export type Table = pgmigrations.Table | transactions.Table | users.Table;
-    export type Selectable = pgmigrations.Selectable | transactions.Selectable | users.Selectable;
-    export type JSONSelectable = pgmigrations.JSONSelectable | transactions.JSONSelectable | users.JSONSelectable;
-    export type Whereable = pgmigrations.Whereable | transactions.Whereable | users.Whereable;
-    export type Insertable = pgmigrations.Insertable | transactions.Insertable | users.Insertable;
-    export type Updatable = pgmigrations.Updatable | transactions.Updatable | users.Updatable;
-    export type UniqueIndex = pgmigrations.UniqueIndex | transactions.UniqueIndex | users.UniqueIndex;
-    export type Column = pgmigrations.Column | transactions.Column | users.Column;
+    export type Table = accounts.Table | pgmigrations.Table | transactions.Table | users.Table;
+    export type Selectable = accounts.Selectable | pgmigrations.Selectable | transactions.Selectable | users.Selectable;
+    export type JSONSelectable = accounts.JSONSelectable | pgmigrations.JSONSelectable | transactions.JSONSelectable | users.JSONSelectable;
+    export type Whereable = accounts.Whereable | pgmigrations.Whereable | transactions.Whereable | users.Whereable;
+    export type Insertable = accounts.Insertable | pgmigrations.Insertable | transactions.Insertable | users.Insertable;
+    export type Updatable = accounts.Updatable | pgmigrations.Updatable | transactions.Updatable | users.Updatable;
+    export type UniqueIndex = accounts.UniqueIndex | pgmigrations.UniqueIndex | transactions.UniqueIndex | users.UniqueIndex;
+    export type Column = accounts.Column | pgmigrations.Column | transactions.Column | users.Column;
   
-    export type AllBaseTables = [pgmigrations.Table, transactions.Table, users.Table];
+    export type AllBaseTables = [accounts.Table, pgmigrations.Table, transactions.Table, users.Table];
     export type AllForeignTables = [];
     export type AllViews = [];
     export type AllMaterializedViews = [];
-    export type AllTablesAndViews = [pgmigrations.Table, transactions.Table, users.Table];
+    export type AllTablesAndViews = [accounts.Table, pgmigrations.Table, transactions.Table, users.Table];
   }
 
 
@@ -555,48 +698,56 @@ declare module 'zapatos/schema' {
   /* === lookups === */
 
   export type SelectableForTable<T extends Table> = {
+    "accounts": accounts.Selectable;
     "pgmigrations": pgmigrations.Selectable;
     "transactions": transactions.Selectable;
     "users": users.Selectable;
   }[T];
 
   export type JSONSelectableForTable<T extends Table> = {
+    "accounts": accounts.JSONSelectable;
     "pgmigrations": pgmigrations.JSONSelectable;
     "transactions": transactions.JSONSelectable;
     "users": users.JSONSelectable;
   }[T];
 
   export type WhereableForTable<T extends Table> = {
+    "accounts": accounts.Whereable;
     "pgmigrations": pgmigrations.Whereable;
     "transactions": transactions.Whereable;
     "users": users.Whereable;
   }[T];
 
   export type InsertableForTable<T extends Table> = {
+    "accounts": accounts.Insertable;
     "pgmigrations": pgmigrations.Insertable;
     "transactions": transactions.Insertable;
     "users": users.Insertable;
   }[T];
 
   export type UpdatableForTable<T extends Table> = {
+    "accounts": accounts.Updatable;
     "pgmigrations": pgmigrations.Updatable;
     "transactions": transactions.Updatable;
     "users": users.Updatable;
   }[T];
 
   export type UniqueIndexForTable<T extends Table> = {
+    "accounts": accounts.UniqueIndex;
     "pgmigrations": pgmigrations.UniqueIndex;
     "transactions": transactions.UniqueIndex;
     "users": users.UniqueIndex;
   }[T];
 
   export type ColumnForTable<T extends Table> = {
+    "accounts": accounts.Column;
     "pgmigrations": pgmigrations.Column;
     "transactions": transactions.Column;
     "users": users.Column;
   }[T];
 
   export type SQLForTable<T extends Table> = {
+    "accounts": accounts.SQL;
     "pgmigrations": pgmigrations.SQL;
     "transactions": transactions.SQL;
     "users": users.SQL;

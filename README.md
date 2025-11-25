@@ -62,13 +62,13 @@ The system implements an **immutable, append-only transaction ledger** as the si
 ### Transaction Types
 
 1. **Transfers** (`POST /transactions`):
-   - Move funds between two users
+   - Move funds between two accounts
    - Requires sufficient balance in source account
-   - Both users locked during transaction
+   - Both accounts locked during transaction
 
-2. **Deposits** (`POST /users/:id/deposit`):
+2. **Deposits** (`POST /accounts/:id/deposit`):
    - Inject money into the system
-   - `source_user_id` is NULL (indicating external source)
+   - `source_account_id` is NULL (indicating external source)
    - Always succeeds (no balance check)
 
 ### Balance Calculation
@@ -77,37 +77,37 @@ Balances are computed Just-In-Time using PostgreSQL functions:
 
 ```sql
 -- Current balance
-SELECT public.get_current_balance(user_id);
+SELECT public.get_current_balance(account_id);
 
 -- Historical balance (point-in-time)
-SELECT public.get_balance_on_date(user_id, timestamp);
+SELECT public.get_balance_on_date(account_id, timestamp);
 ```
 
 **Balance Formula**:
 ```
 balance = SUM(incoming) - SUM(outgoing)
 
-incoming  = WHERE destination_user_id = user_id
-outgoing  = WHERE source_user_id = user_id
+incoming  = WHERE destination_account_id = account_id
+outgoing  = WHERE source_account_id = account_id
 ```
 
 ## API Endpoints
 
-### Users
-- `POST /users` - Create a new user
+### Accounts
+- `POST /accounts` - Create a new account
 
 ### Transactions
-- `POST /transactions` - Transfer funds between users
-- `POST /users/:id/deposit` - Deposit funds into user account
-- `GET /users/:id/balance` - Get current balance (or historical with `?date=` query param)
-- `GET /users/:id/transactions` - Get transaction history for a user
+- `POST /transactions` - Transfer funds between accounts
+- `POST /accounts/:id/deposit` - Deposit funds into account account
+- `GET /accounts/:id/balance` - Get current balance (or historical with `?date=` query param)
+- `GET /accounts/:id/transactions` - Get transaction history for a account
 
 ### System
 - `GET /api-docs` - Swagger UI documentation
 - `GET /openapi.json` - OpenAPI specification (manually defined)
 - `GET /health` - Health check endpoint
 
-**Note**: All responses use snake_case field names (e.g., `created_at`, `source_user_id`).
+**Note**: All responses use snake_case field names (e.g., `created_at`, `source_account_id`).
 
 ### Database Connection (SQLTools)
 
@@ -118,7 +118,7 @@ To connect to the PostgreSQL database using an external tool like the [SQLTools 
 - **Server Address**: `localhost`
 - **Port**: `5432`
 - **Database**: `thesaurum`
-- **Username**: `postgres`
+- **Accountname**: `postgres`
 - **Password**: `postgres` (select "Save as plaintext in settings" or have it ask on connect)
 
 ## Development
@@ -151,7 +151,7 @@ npm run test:coverage     # Generate coverage report
 
 Test files are located in `server/src/__tests__/` and cover:
 - Health endpoint tests
-- User management and balance operations
+- Account management and balance operations
 - Transaction processing (transfers and deposits)
 - Edge cases and validation
 - Balance accuracy verification
@@ -161,7 +161,7 @@ Test files are located in `server/src/__tests__/` and cover:
 
 ### Load/Stress Testing with k6
 
-The project includes a k6 stress test that simulates high-concurrency transaction scenarios with 1,000 concurrent virtual users.
+The project includes a k6 stress test that simulates high-concurrency transaction scenarios with 1,000 concurrent virtual accounts.
 
 Prerequisites:
 - Install k6: `brew install k6` (macOS) or see [k6.io/docs](https://k6.io/docs/getting-started/installation/)
@@ -172,8 +172,8 @@ k6 run k6-stress-test.js
 ```
 
 The test:
-- Creates 10,000 users with initial balances
-- Executes random transactions between users
+- Creates 10,000 accounts with initial balances
+- Executes random transactions between accounts
 - Validates performance thresholds (95th percentile < 850ms, < 10% failure rate)
 - Verifies data integrity (total balance conservation)
 
@@ -195,7 +195,7 @@ SQL Migrations → PostgreSQL Schema → Zapatos Types + pgzod Schemas → API V
 
 The system uses PostgreSQL row-level locks to ensure transaction safety:
 
-1. **Lock Acquisition**: `SELECT FOR UPDATE` on both source and destination users
+1. **Lock Acquisition**: `SELECT FOR UPDATE` on both source and destination accounts
 2. **Deterministic Ordering**: Locks acquired in UUID order to prevent deadlocks
 3. **Balance Check**: JIT calculation after acquiring locks
 4. **Transaction Insert**: Atomically append to ledger
@@ -214,9 +214,9 @@ For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### Tables
 
-#### `users` (public schema)
+#### `accounts` (public schema)
 ```sql
-CREATE TABLE users (
+CREATE TABLE accounts (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email        TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
@@ -230,8 +230,8 @@ CREATE TABLE users (
 CREATE TABLE transactions (
   id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   idempotency_key      UUID NOT NULL UNIQUE,
-  source_user_id       UUID REFERENCES users(id),  -- NULL = deposit
-  destination_user_id  UUID NOT NULL REFERENCES users(id),
+  source_account_id       UUID REFERENCES accounts(id),  -- NULL = deposit
+  destination_account_id  UUID NOT NULL REFERENCES accounts(id),
   amount               BIGINT NOT NULL CHECK (amount > 0),  -- cents
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -242,8 +242,8 @@ Tracks failed transaction attempts for debugging and recovery.
 
 ### Functions
 
-- `public.get_current_balance(user_id UUID) → BIGINT` - Current balance
-- `public.get_balance_on_date(user_id UUID, date TIMESTAMPTZ) → BIGINT` - Historical balance
+- `public.get_current_balance(account_id UUID) → BIGINT` - Current balance
+- `public.get_balance_on_date(account_id UUID, date TIMESTAMPTZ) → BIGINT` - Historical balance
 
 ### Workflow for Schema Changes
 
@@ -274,8 +274,8 @@ Tracks failed transaction attempts for debugging and recovery.
 - Retrying with the same key returns 409 Conflict (safe to retry)
 
 ### Balance Queries
-- Current balance: `GET /users/:id/balance`
-- Historical balance: `GET /users/:id/balance?date=2025-01-01T00:00:00Z`
+- Current balance: `GET /accounts/:id/balance`
+- Historical balance: `GET /accounts/:id/balance?date=2025-01-01T00:00:00Z`
 - Balances are always computed from the ledger (never stored)
 
 ### Security (Development Mode)

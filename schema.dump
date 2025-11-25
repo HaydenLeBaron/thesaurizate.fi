@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict w3HGVlNMUCQVwJs0xrPZaUv8ACTHZeTW0Z2HLcprdTwc35x3FrOCGB1Wl5MmjTd
+\restrict pqHwuMSRwYz3a28sSDl2HkD2OnAbQihHULtREmuhNMScZGNQze11nqgDZojl7Ph
 
--- Dumped from database version 16.10
--- Dumped by pg_dump version 16.10
+-- Dumped from database version 16.11
+-- Dumped by pg_dump version 16.11
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -45,36 +45,36 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 -- Name: get_balance_on_date(uuid, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_balance_on_date(p_user_id uuid, p_date timestamp with time zone) RETURNS bigint
+CREATE FUNCTION public.get_balance_on_date(p_account_id uuid, p_date timestamp with time zone) RETURNS bigint
     LANGUAGE sql STABLE PARALLEL SAFE
     AS $$
     SELECT COALESCE(SUM(
         CASE
-            WHEN source_user_id = p_user_id THEN -amount
-            WHEN destination_user_id = p_user_id THEN amount
+            WHEN source_account_id = p_account_id THEN -amount
+            WHEN destination_account_id = p_account_id THEN amount
             ELSE 0
         END
     ), 0)
     FROM public.transactions
-    WHERE (source_user_id = p_user_id OR destination_user_id = p_user_id)
+    WHERE (source_account_id = p_account_id OR destination_account_id = p_account_id)
         AND created_at <= p_date;
 $$;
 
 
-ALTER FUNCTION public.get_balance_on_date(p_user_id uuid, p_date timestamp with time zone) OWNER TO postgres;
+ALTER FUNCTION public.get_balance_on_date(p_account_id uuid, p_date timestamp with time zone) OWNER TO postgres;
 
 --
 -- Name: get_current_balance(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_current_balance(p_user_id uuid) RETURNS bigint
+CREATE FUNCTION public.get_current_balance(p_account_id uuid) RETURNS bigint
     LANGUAGE sql STABLE PARALLEL SAFE
     AS $$
-    SELECT public.get_balance_on_date(p_user_id, NOW());
+    SELECT public.get_balance_on_date(p_account_id, NOW());
 $$;
 
 
-ALTER FUNCTION public.get_current_balance(p_user_id uuid) OWNER TO postgres;
+ALTER FUNCTION public.get_current_balance(p_account_id uuid) OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -87,19 +87,33 @@ SET default_table_access_method = heap;
 CREATE TABLE private.failed_transactions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     idempotency_key uuid NOT NULL,
-    source_user_id uuid,
-    destination_user_id uuid,
+    source_account_id uuid,
+    destination_account_id uuid,
     amount integer NOT NULL,
     error_message text NOT NULL,
     retry_count integer DEFAULT 0 NOT NULL,
     failed_at timestamp with time zone DEFAULT now() NOT NULL,
     addressed_at timestamp with time zone,
-    CONSTRAINT different_users CHECK (((source_user_id IS NULL) OR (source_user_id <> destination_user_id))),
+    CONSTRAINT different_accounts CHECK (((source_account_id IS NULL) OR (source_account_id <> destination_account_id))),
     CONSTRAINT failed_transactions_amount_check CHECK ((amount > 0))
 );
 
 
 ALTER TABLE private.failed_transactions OWNER TO postgres;
+
+--
+-- Name: accounts; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.accounts (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.accounts OWNER TO postgres;
 
 --
 -- Name: pgmigrations; Type: TABLE; Schema: public; Owner: postgres
@@ -143,8 +157,8 @@ ALTER SEQUENCE public.pgmigrations_id_seq OWNED BY public.pgmigrations.id;
 CREATE TABLE public.transactions (
     id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
     idempotency_key uuid NOT NULL,
-    source_user_id uuid,
-    destination_user_id uuid NOT NULL,
+    source_account_id uuid,
+    destination_account_id uuid NOT NULL,
     amount bigint NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT transactions_amount_check CHECK ((amount > 0))
@@ -181,6 +195,14 @@ ALTER TABLE ONLY public.pgmigrations ALTER COLUMN id SET DEFAULT nextval('public
 
 ALTER TABLE ONLY private.failed_transactions
     ADD CONSTRAINT failed_transactions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.accounts
+    ADD CONSTRAINT accounts_pkey PRIMARY KEY (id);
 
 
 --
@@ -224,10 +246,10 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: idx_failed_transactions_destination_user; Type: INDEX; Schema: private; Owner: postgres
+-- Name: idx_failed_transactions_destination_account; Type: INDEX; Schema: private; Owner: postgres
 --
 
-CREATE INDEX idx_failed_transactions_destination_user ON private.failed_transactions USING btree (destination_user_id);
+CREATE INDEX idx_failed_transactions_destination_account ON private.failed_transactions USING btree (destination_account_id);
 
 
 --
@@ -245,68 +267,76 @@ CREATE INDEX idx_failed_transactions_idempotency_key ON private.failed_transacti
 
 
 --
--- Name: idx_failed_transactions_source_user; Type: INDEX; Schema: private; Owner: postgres
+-- Name: idx_failed_transactions_source_account; Type: INDEX; Schema: private; Owner: postgres
 --
 
-CREATE INDEX idx_failed_transactions_source_user ON private.failed_transactions USING btree (source_user_id);
+CREATE INDEX idx_failed_transactions_source_account ON private.failed_transactions USING btree (source_account_id);
+
+
+--
+-- Name: idx_transactions_account_balance; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_transactions_account_balance ON public.transactions USING btree (source_account_id, destination_account_id, created_at, amount);
 
 
 --
 -- Name: idx_transactions_dest; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_transactions_dest ON public.transactions USING btree (destination_user_id, created_at);
+CREATE INDEX idx_transactions_dest ON public.transactions USING btree (destination_account_id, created_at);
 
 
 --
 -- Name: idx_transactions_source; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_transactions_source ON public.transactions USING btree (source_user_id, created_at);
+CREATE INDEX idx_transactions_source ON public.transactions USING btree (source_account_id, created_at);
 
 
 --
--- Name: idx_transactions_user_balance; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_transactions_user_balance ON public.transactions USING btree (source_user_id, destination_user_id, created_at, amount);
-
-
---
--- Name: failed_transactions failed_transactions_destination_user_id_fkey; Type: FK CONSTRAINT; Schema: private; Owner: postgres
+-- Name: failed_transactions failed_transactions_destination_account_id_fkey; Type: FK CONSTRAINT; Schema: private; Owner: postgres
 --
 
 ALTER TABLE ONLY private.failed_transactions
-    ADD CONSTRAINT failed_transactions_destination_user_id_fkey FOREIGN KEY (destination_user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT failed_transactions_destination_account_id_fkey FOREIGN KEY (destination_account_id) REFERENCES public.accounts(id);
 
 
 --
--- Name: failed_transactions failed_transactions_source_user_id_fkey; Type: FK CONSTRAINT; Schema: private; Owner: postgres
+-- Name: failed_transactions failed_transactions_source_account_id_fkey; Type: FK CONSTRAINT; Schema: private; Owner: postgres
 --
 
 ALTER TABLE ONLY private.failed_transactions
-    ADD CONSTRAINT failed_transactions_source_user_id_fkey FOREIGN KEY (source_user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT failed_transactions_source_account_id_fkey FOREIGN KEY (source_account_id) REFERENCES public.accounts(id);
 
 
 --
--- Name: transactions transactions_destination_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accounts accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.accounts
+    ADD CONSTRAINT accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: transactions transactions_destination_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_destination_user_id_fkey FOREIGN KEY (destination_user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT transactions_destination_account_id_fkey FOREIGN KEY (destination_account_id) REFERENCES public.accounts(id);
 
 
 --
--- Name: transactions transactions_source_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: transactions transactions_source_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_source_user_id_fkey FOREIGN KEY (source_user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT transactions_source_account_id_fkey FOREIGN KEY (source_account_id) REFERENCES public.accounts(id);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict w3HGVlNMUCQVwJs0xrPZaUv8ACTHZeTW0Z2HLcprdTwc35x3FrOCGB1Wl5MmjTd
+\unrestrict pqHwuMSRwYz3a28sSDl2HkD2OnAbQihHULtREmuhNMScZGNQze11nqgDZojl7Ph
 

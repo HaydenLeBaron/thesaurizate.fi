@@ -4,10 +4,10 @@ import { pool } from '../db';
 import { randomUUID } from 'crypto';
 
 describe('Schema Validation Tests', () => {
-  let userId: string;
+  let accountId: string;
 
   beforeEach(async () => {
-    await pool.query('TRUNCATE TABLE transactions, users RESTART IDENTITY CASCADE');
+    await pool.query('TRUNCATE TABLE transactions, accounts, users RESTART IDENTITY CASCADE');
 
     const userResponse = await request(app)
       .post('/users')
@@ -15,21 +15,29 @@ describe('Schema Validation Tests', () => {
         email: 'schema@example.com',
         password: 'password123',
       });
-    userId = userResponse.body.id;
+    const userId = userResponse.body.id;
+
+    const accountResponse = await request(app)
+      .post('/accounts')
+      .send({
+        user_id: userId,
+      });
+    accountId = accountResponse.body.id;
   });
 
-  describe('User Creation Schema Validation', () => {
-    it('should validate email field type', async () => {
+  describe('Account Creation Schema Validation', () => {
+    it('should validate user_id field type', async () => {
       const invalidTypes = [
-        { email: 123, password: 'password123' },
-        { email: true, password: 'password123' },
-        { email: {}, password: 'password123' },
-        { email: [], password: 'password123' },
+        { user_id: 123 },
+        { user_id: true },
+        { user_id: {} },
+        { user_id: [] },
+        { user_id: 'not-a-uuid' },
       ];
 
       for (const body of invalidTypes) {
         const response = await request(app)
-          .post('/users')
+          .post('/accounts')
           .send(body)
           .expect(400);
 
@@ -37,68 +45,59 @@ describe('Schema Validation Tests', () => {
       }
     });
 
-    it('should validate password field type', async () => {
-      const invalidTypes = [
-        { email: 'test@example.com', password: 12345678 },
-        { email: 'test@example.com', password: true },
-        { email: 'test@example.com', password: {} },
-        { email: 'test@example.com', password: [] },
-      ];
+    it('should reject missing user_id', async () => {
+      const response = await request(app)
+        .post('/accounts')
+        .send({})
+        .expect(400);
 
-      for (const body of invalidTypes) {
-        const response = await request(app)
-          .post('/users')
-          .send(body)
-          .expect(400);
-
-        expect(response.body.error).toBe('Validation error');
-      }
+      expect(response.body.error).toBe('Validation error');
     });
 
     it('should reject extra unexpected fields gracefully', async () => {
-      const response = await request(app)
+      const userResponse = await request(app)
         .post('/users')
         .send({
           email: 'extra@example.com',
           password: 'password123',
+        })
+        .expect(201);
+
+      const response = await request(app)
+        .post('/accounts')
+        .send({
+          user_id: userResponse.body.id,
           unexpectedField: 'unexpected',
           anotherField: 'another',
         })
         .expect(201);
 
       // Should succeed and ignore extra fields
-      expect(response.body.email).toBe('extra@example.com');
+      expect(response.body.user_id).toBe(userResponse.body.id);
       expect(response.body).not.toHaveProperty('unexpectedField');
-    });
-
-    it('should return validation details in error response', async () => {
-      const response = await request(app)
-        .post('/users')
-        .send({
-          email: 'invalid-email',
-          password: 'short',
-        })
-        .expect(400);
-
-      expect(response.body.error).toBe('Validation error');
-      expect(response.body.details).toBeDefined();
-      expect(Array.isArray(response.body.details)).toBe(true);
     });
   });
 
   describe('Transaction Creation Schema Validation', () => {
-    let user2Id: string;
+    let account2Id: string;
 
     beforeEach(async () => {
       const user2Response = await request(app)
         .post('/users')
         .send({
-          email: 'user2@example.com',
+          email: 'account2@example.com',
           password: 'password123',
         });
-      user2Id = user2Response.body.id;
+      const userId2 = user2Response.body.id;
 
-      await request(app).post(`/users/${userId}/deposit`).send({
+      const account2Response = await request(app)
+        .post('/accounts')
+        .send({
+          user_id: userId2,
+        });
+      account2Id = account2Response.body.id;
+
+      await request(app).post(`/accounts/${accountId}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 100000,
       });
@@ -107,16 +106,16 @@ describe('Schema Validation Tests', () => {
     it('should validate all required fields are present', async () => {
       const requiredFields = [
         'idempotency_key',
-        'source_user_id',
-        'destination_user_id',
+        'source_account_id',
+        'destination_account_id',
         'amount',
       ];
 
       for (const fieldToOmit of requiredFields) {
         const body: any = {
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 1000,
         };
         delete body[fieldToOmit];
@@ -144,8 +143,8 @@ describe('Schema Validation Tests', () => {
           .post('/transactions')
           .send({
             idempotency_key: invalidUUID,
-            source_user_id: userId,
-            destination_user_id: user2Id,
+            source_account_id: accountId,
+            destination_account_id: account2Id,
             amount: 1000,
           })
           .expect(400);
@@ -154,13 +153,13 @@ describe('Schema Validation Tests', () => {
       }
     });
 
-    it('should validate source_user_id is UUID format', async () => {
+    it('should validate source_account_id is UUID format', async () => {
       const response = await request(app)
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: 'not-a-uuid',
-          destination_user_id: user2Id,
+          source_account_id: 'not-a-uuid',
+          destination_account_id: account2Id,
           amount: 1000,
         })
         .expect(400);
@@ -168,13 +167,13 @@ describe('Schema Validation Tests', () => {
       expect(response.body.error).toBe('Validation error');
     });
 
-    it('should validate destination_user_id is UUID format', async () => {
+    it('should validate destination_account_id is UUID format', async () => {
       const response = await request(app)
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: 'not-a-uuid',
+          source_account_id: accountId,
+          destination_account_id: 'not-a-uuid',
           amount: 1000,
         })
         .expect(400);
@@ -190,8 +189,8 @@ describe('Schema Validation Tests', () => {
           .post('/transactions')
           .send({
             idempotency_key: randomUUID(),
-            source_user_id: userId,
-            destination_user_id: user2Id,
+            source_account_id: accountId,
+            destination_account_id: account2Id,
             amount,
           })
           .expect(400);
@@ -205,8 +204,8 @@ describe('Schema Validation Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: userId,
+          source_account_id: accountId,
+          destination_account_id: accountId,
           amount: 1000,
         })
         .expect(400);
@@ -218,20 +217,20 @@ describe('Schema Validation Tests', () => {
       const invalidBodies = [
         {
           idempotency_key: 12345,
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: 1000,
         },
         {
           idempotency_key: randomUUID(),
-          source_user_id: 12345,
-          destination_user_id: user2Id,
+          source_account_id: 12345,
+          destination_account_id: account2Id,
           amount: 1000,
         },
         {
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Id,
+          source_account_id: accountId,
+          destination_account_id: account2Id,
           amount: '1000',
         },
       ];
@@ -250,7 +249,7 @@ describe('Schema Validation Tests', () => {
   describe('Deposit Schema Validation', () => {
     it('should validate all required fields are present', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           // Missing both fields
         })
@@ -261,7 +260,7 @@ describe('Schema Validation Tests', () => {
 
     it('should validate idempotency_key format', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: 'invalid',
           amount: 1000,
@@ -276,7 +275,7 @@ describe('Schema Validation Tests', () => {
 
       for (const amount of invalidAmounts) {
         const response = await request(app)
-          .post(`/users/${userId}/deposit`)
+          .post(`/accounts/${accountId}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount,
@@ -289,7 +288,7 @@ describe('Schema Validation Tests', () => {
 
     it('should validate amount is integer', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 100.5,
@@ -304,7 +303,7 @@ describe('Schema Validation Tests', () => {
 
       for (const amount of invalidTypes) {
         const response = await request(app)
-          .post(`/users/${userId}/deposit`)
+          .post(`/accounts/${accountId}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount,
@@ -328,7 +327,7 @@ describe('Schema Validation Tests', () => {
 
       for (const date of invalidDates) {
         const response = await request(app)
-          .get(`/users/${userId}/balance?date=${date}`)
+          .get(`/accounts/${accountId}/balance?date=${date}`)
           .expect(400);
 
         expect(response.body.error).toBe('Validation error');
@@ -344,16 +343,16 @@ describe('Schema Validation Tests', () => {
 
       for (const date of validDates) {
         const response = await request(app)
-          .get(`/users/${userId}/balance?date=${date}`)
+          .get(`/accounts/${accountId}/balance?date=${date}`)
           .expect(200);
 
         expect(response.body).toHaveProperty('balance');
       }
     });
 
-    it('should validate user ID in path parameter', async () => {
+    it('should validate account ID in path parameter', async () => {
       const response = await request(app)
-        .get('/users/not-a-uuid/balance')
+        .get('/accounts/not-a-uuid/balance')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -361,9 +360,9 @@ describe('Schema Validation Tests', () => {
   });
 
   describe('Transaction History Query Validation', () => {
-    it('should validate user ID in path parameter', async () => {
+    it('should validate account ID in path parameter', async () => {
       const response = await request(app)
-        .get('/users/not-a-uuid/transactions')
+        .get('/accounts/not-a-uuid/transactions')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -371,7 +370,7 @@ describe('Schema Validation Tests', () => {
 
     it('should accept valid UUID in path parameter', async () => {
       const response = await request(app)
-        .get(`/users/${userId}/transactions`)
+        .get(`/accounts/${accountId}/transactions`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -427,7 +426,7 @@ describe('Schema Validation Tests', () => {
   describe('Field Coercion and Type Safety', () => {
     it('should not coerce string numbers to numbers', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: '1000', // String instead of number
@@ -439,7 +438,7 @@ describe('Schema Validation Tests', () => {
 
     it('should not coerce boolean to string', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/accounts')
         .send({
           email: true,
           password: 'password123',
@@ -455,12 +454,12 @@ describe('Schema Validation Tests', () => {
       const sqlInjectionAttempts = [
         "admin'--",
         "admin' OR '1'='1",
-        "'; DROP TABLE users;--",
+        "'; DROP TABLE accounts;--",
       ];
 
       for (const email of sqlInjectionAttempts) {
         const response = await request(app)
-          .post('/users')
+          .post('/accounts')
           .send({
             email,
             password: 'password123',
@@ -473,7 +472,7 @@ describe('Schema Validation Tests', () => {
 
     it('should sanitize UUID inputs through validation', async () => {
       const response = await request(app)
-        .get("/users/'; DROP TABLE users;--/balance")
+        .get("/accounts/'; DROP TABLE accounts;--/balance")
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -481,8 +480,8 @@ describe('Schema Validation Tests', () => {
   });
 
   describe('Response Schema Consistency', () => {
-    it('should return consistent user schema on creation', async () => {
-      const response = await request(app)
+    it('should return consistent account schema on creation', async () => {
+      const userResponse = await request(app)
         .post('/users')
         .send({
           email: 'schema-test@example.com',
@@ -490,22 +489,34 @@ describe('Schema Validation Tests', () => {
         })
         .expect(201);
 
+      const response = await request(app)
+        .post('/accounts')
+        .send({
+          user_id: userResponse.body.id,
+        })
+        .expect(201);
+
       expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('email');
+      expect(response.body).toHaveProperty('user_id');
       expect(response.body).toHaveProperty('created_at');
-      expect(response.body).not.toHaveProperty('password');
-      expect(response.body).not.toHaveProperty('password_hash');
+      expect(response.body.user_id).toBe(userResponse.body.id);
     });
 
     it('should return consistent transaction schema on creation', async () => {
       const user2Response = await request(app)
         .post('/users')
         .send({
-          email: 'user2@example.com',
+          email: 'account2@example.com',
           password: 'password123',
         });
 
-      await request(app).post(`/users/${userId}/deposit`).send({
+      const account2Response = await request(app)
+        .post('/accounts')
+        .send({
+          user_id: user2Response.body.id,
+        });
+
+      await request(app).post(`/accounts/${accountId}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 10000,
       });
@@ -514,34 +525,34 @@ describe('Schema Validation Tests', () => {
         .post('/transactions')
         .send({
           idempotency_key: randomUUID(),
-          source_user_id: userId,
-          destination_user_id: user2Response.body.id,
+          source_account_id: accountId,
+          destination_account_id: account2Response.body.id,
           amount: 1000,
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('idempotency_key');
-      expect(response.body).toHaveProperty('source_user_id');
-      expect(response.body).toHaveProperty('destination_user_id');
+      expect(response.body).toHaveProperty('source_account_id');
+      expect(response.body).toHaveProperty('destination_account_id');
       expect(response.body).toHaveProperty('amount');
       expect(response.body).toHaveProperty('created_at');
     });
 
     it('should return consistent balance schema', async () => {
       const response = await request(app)
-        .get(`/users/${userId}/balance`)
+        .get(`/accounts/${accountId}/balance`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('user_id');
+      expect(response.body).toHaveProperty('account_id');
       expect(response.body).toHaveProperty('balance');
-      expect(typeof response.body.user_id).toBe('string');
+      expect(typeof response.body.account_id).toBe('string');
       expect(typeof response.body.balance).toBe('number');
     });
 
     it('should return consistent deposit schema', async () => {
       const response = await request(app)
-        .post(`/users/${userId}/deposit`)
+        .post(`/accounts/${accountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 5000,
@@ -550,12 +561,12 @@ describe('Schema Validation Tests', () => {
 
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('idempotency_key');
-      expect(response.body).toHaveProperty('source_user_id');
-      expect(response.body).toHaveProperty('destination_user_id');
+      expect(response.body).toHaveProperty('source_account_id');
+      expect(response.body).toHaveProperty('destination_account_id');
       expect(response.body).toHaveProperty('amount');
       expect(response.body).toHaveProperty('created_at');
-      expect(response.body.source_user_id).toBeNull();
-      expect(response.body.destination_user_id).toBe(userId);
+      expect(response.body.source_account_id).toBeNull();
+      expect(response.body.destination_account_id).toBe(accountId);
     });
   });
 });

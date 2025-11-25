@@ -2,13 +2,13 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
-// Simple balance read throughput test (1 transaction per user)
+// Simple balance read throughput test (1 transaction per account)
 export const options = {
   setupTimeout: '2m',
   scenarios: {
     balance_reads: {
       executor: 'shared-iterations',
-      vus: 100, // 100 concurrent virtual users
+      vus: 100, // 100 concurrent virtual accounts
       iterations: 50000, // Total 50k balance reads
       maxDuration: '5m',
     },
@@ -22,17 +22,17 @@ export const options = {
 
 const BASE_URL = __ENV.API_URL || 'http://localhost:3000';
 
-// Setup: Create test users with exactly 1 transaction each
+// Setup: Create test accounts with exactly 1 transaction each
 export function setup() {
-  console.log('Setting up test users for simple balance reads...');
+  console.log('Setting up test accounts for simple balance reads...');
 
   const timestamp = Date.now();
-  const numUsers = 1000; // Create 1000 users to query
-  const userIds = [];
+  const numAccounts = 1000; // Create 1000 accounts to query
+  const accountIds = [];
 
-  console.log('Creating users...');
-  for (let i = 0; i < numUsers; i++) {
-    const res = http.post(`${BASE_URL}/users`, JSON.stringify({
+  console.log('Creating accounts...');
+  for (let i = 0; i < numAccounts; i++) {
+    const res = http.post(`${BASE_URL}/accounts`, JSON.stringify({
       email: `balancesimple${timestamp}_${i}@example.com`,
       password: 'password123',
     }), {
@@ -40,50 +40,50 @@ export function setup() {
     });
 
     if (res.status === 201) {
-      const userId = JSON.parse(res.body).id;
-      userIds.push(userId);
+      const accountId = JSON.parse(res.body).id;
+      accountIds.push(accountId);
     }
 
     if ((i + 1) % 100 === 0) {
-      console.log(`Created ${i + 1}/${numUsers} users`);
+      console.log(`Created ${i + 1}/${numAccounts} accounts`);
     }
   }
 
-  console.log(`Created ${userIds.length} users`);
-  console.log('Creating exactly 1 deposit transaction per user...');
+  console.log(`Created ${accountIds.length} accounts`);
+  console.log('Creating exactly 1 deposit transaction per account...');
 
-  // Give each user exactly 1 transaction (a deposit)
-  for (let i = 0; i < userIds.length; i++) {
-    http.post(`${BASE_URL}/users/${userIds[i]}/deposit`, JSON.stringify({
+  // Give each account exactly 1 transaction (a deposit)
+  for (let i = 0; i < accountIds.length; i++) {
+    http.post(`${BASE_URL}/accounts/${accountIds[i]}/deposit`, JSON.stringify({
       idempotency_key: uuidv4(),
-      amount: 1000000, // $10,000 per user
+      amount: 1000000, // $10,000 per account
     }), {
       headers: { 'Content-Type': 'application/json' },
     });
 
     if ((i + 1) % 100 === 0) {
-      console.log(`Created deposits for ${i + 1}/${userIds.length} users`);
+      console.log(`Created deposits for ${i + 1}/${accountIds.length} accounts`);
     }
   }
 
-  console.log(`Setup complete: ${userIds.length} users, ${userIds.length} transactions (1 per user)`);
-  return { userIds };
+  console.log(`Setup complete: ${accountIds.length} accounts, ${accountIds.length} transactions (1 per account)`);
+  return { accountIds };
 }
 
 // Main test: Read balances repeatedly
 export default function (data) {
-  const { userIds } = data;
+  const { accountIds } = data;
 
-  if (!userIds || userIds.length === 0) {
-    console.error('No users available for testing');
+  if (!accountIds || accountIds.length === 0) {
+    console.error('No accounts available for testing');
     return;
   }
 
-  // Pick a random user to query
-  const randomUserId = userIds[Math.floor(Math.random() * userIds.length)];
+  // Pick a random account to query
+  const randomAccountId = accountIds[Math.floor(Math.random() * accountIds.length)];
 
-  // GET balance for the user
-  const res = http.get(`${BASE_URL}/users/${randomUserId}/balance`, {
+  // GET balance for the account
+  const res = http.get(`${BASE_URL}/accounts/${randomAccountId}/balance`, {
     headers: { 'Content-Type': 'application/json' },
   });
 
