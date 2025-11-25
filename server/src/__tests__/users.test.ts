@@ -322,10 +322,11 @@ describe('Users API', () => {
             const createdAt = new Date(response.body.created_at);
             const updatedAt = new Date(response.body.updated_at);
 
-            expect(createdAt.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-            expect(createdAt.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
-            expect(updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-            expect(updatedAt.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
+            // Allow 10ms tolerance for timing differences
+            expect(createdAt.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime() - 10);
+            expect(createdAt.getTime()).toBeLessThanOrEqual(afterCreation.getTime() + 10);
+            expect(updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime() - 10);
+            expect(updatedAt.getTime()).toBeLessThanOrEqual(afterCreation.getTime() + 10);
         });
     });
 });

@@ -79,19 +79,19 @@ export async function executeTransaction(data: {
   // Retry loop with exponential backoff for serialization errors
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      // 1. Idempotency Check: Prevents duplicate API requests
-      const existingTx = await db.selectOne(
-        'transactions',
-        { idempotency_key: data.idempotencyKey }
-      ).run(pool);
-
-      if (existingTx) {
-        console.log('Idempotency key already processed. Returning original transaction.');
-        return existingTx;
-      }
-
-      // 2. Begin Atomic Database Transaction
+      // Begin Atomic Database Transaction
       return await db.serializable(pool, async (txClient) => {
+        // 1. Idempotency Check: Prevents duplicate API requests
+        // Must be inside transaction to prevent race conditions
+        const existingTx = await db.selectOne(
+          'transactions',
+          { idempotency_key: data.idempotencyKey }
+        ).run(txClient);
+
+        if (existingTx) {
+          console.log('Idempotency key already processed. Returning original transaction.');
+          return existingTx;
+        }
         // 3. Acquire Row-Level Locks on Accounts (Prevents Deadlocks)
         // Lock accounts in sorted order by account_id to prevent deadlocks
         // Since each account = one account, we lock the account rows directly

@@ -9,6 +9,19 @@ import {
   AccountIdPathSchema,
 } from '../schemas/transactions';
 import { CreateAccountSchema, AccountSchema } from '../schemas/accounts';
+import {
+  AccountListQuerySchema,
+  AccountBalanceQuerySchema as V2AccountBalanceQuerySchema,
+  AccountIdPathSchema as V2AccountIdPathSchema,
+  AccountWithBalanceSchema,
+  AccountListItemSchema,
+  AccountContactSchema,
+} from '../schemas/v2/accounts';
+import {
+  TransactionListQuerySchema,
+  TransactionSchema as V2TransactionSchema,
+} from '../schemas/v2/transactions';
+import { PaymentNetworksResponseSchema } from '../schemas/v2/payment-networks';
 
 export const openApiSpec = createDocument({
   openapi: '3.1.0',
@@ -207,6 +220,151 @@ export const openApiSpec = createDocument({
                 }),
               },
             },
+          },
+        },
+      },
+    },
+    // V2 API Endpoints
+    '/v2/accounts': {
+      get: {
+        summary: 'Search and view customer accounts',
+        description: 'List all customer accounts with pagination',
+        tags: ['V2 Accounts'],
+        requestParams: {
+          query: AccountListQuerySchema,
+        },
+        responses: {
+          '200': {
+            description: 'List of accounts',
+            content: {
+              'application/json': {
+                schema: z.array(AccountListItemSchema),
+              },
+            },
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/v2/accounts/{accountId}': {
+      get: {
+        summary: 'Get account balances, liabilities, and other information',
+        description: 'Get account details including balance, liabilities, and metadata',
+        tags: ['V2 Accounts'],
+        requestParams: {
+          path: V2AccountIdPathSchema,
+          query: V2AccountBalanceQuerySchema,
+        },
+        responses: {
+          '200': {
+            description: 'Account with balance information',
+            content: {
+              'application/json': {
+                schema: AccountWithBalanceSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/v2/accounts/{accountId}/contact': {
+      get: {
+        summary: 'Get account contact information',
+        description: 'Get contact information for an account',
+        tags: ['V2 Accounts'],
+        requestParams: {
+          path: V2AccountIdPathSchema,
+        },
+        responses: {
+          '200': {
+            description: 'Account contact information',
+            content: {
+              'application/json': {
+                schema: AccountContactSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account or user not found',
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/v2/accounts/{accountId}/transactions': {
+      get: {
+        summary: 'List all account transactions',
+        description: 'Get all transactions for an account with optional filtering and pagination',
+        tags: ['V2 Transactions'],
+        requestParams: {
+          path: V2AccountIdPathSchema,
+          query: TransactionListQuerySchema,
+        },
+        responses: {
+          '200': {
+            description: 'List of transactions',
+            content: {
+              'application/json': {
+                schema: z.array(V2TransactionSchema),
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
+          },
+        },
+      },
+    },
+    '/v2/accounts/{accountId}/payment-networks': {
+      get: {
+        summary: 'Get payment networks supported by an account',
+        description: 'Get list of payment networks (e.g., ACH, WIRE) supported by an account',
+        tags: ['V2 Accounts'],
+        requestParams: {
+          path: V2AccountIdPathSchema,
+        },
+        responses: {
+          '200': {
+            description: 'Payment networks for account',
+            content: {
+              'application/json': {
+                schema: PaymentNetworksResponseSchema,
+              },
+            },
+          },
+          '404': {
+            description: 'Account not found',
+          },
+          '400': {
+            description: 'Bad request (validation error)',
+          },
+          '500': {
+            description: 'Internal server error',
           },
         },
       },

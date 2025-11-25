@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict pqHwuMSRwYz3a28sSDl2HkD2OnAbQihHULtREmuhNMScZGNQze11nqgDZojl7Ph
+\restrict 37Abtr0dlZM728ZeX9jLlJhcFj7zCLj2fkKYCjna4pxXP0Nt73UkgSgMMqcZEef
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -338,5 +338,5 @@ ALTER TABLE ONLY public.transactions
 -- PostgreSQL database dump complete
 --
 
-\unrestrict pqHwuMSRwYz3a28sSDl2HkD2OnAbQihHULtREmuhNMScZGNQze11nqgDZojl7Ph
+\unrestrict 37Abtr0dlZM728ZeX9jLlJhcFj7zCLj2fkKYCjna4pxXP0Nt73UkgSgMMqcZEef
 
