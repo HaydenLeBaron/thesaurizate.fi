@@ -11,4 +11,14 @@ describe('Health API', () => {
       expect(response.body).toEqual({ status: 'ok' });
     });
   });
+
+  describe('GET /v2/ping', () => {
+    it('should return status ok and version v2', async () => {
+      const response = await request(app)
+        .get('/v2/ping')
+        .expect(200);
+
+      expect(response.body).toEqual({ status: 'ok', version: 'v2' });
+    });
+  });
 });

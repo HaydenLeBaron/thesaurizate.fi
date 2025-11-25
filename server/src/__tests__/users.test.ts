@@ -11,7 +11,7 @@ describe('Users API', () => {
     describe('POST /users', () => {
         it('should create a new user successfully', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'test@example.com',
                     password: 'password123',
@@ -30,7 +30,7 @@ describe('Users API', () => {
 
         it('should reject invalid email format', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'invalid-email',
                     password: 'password123',
@@ -43,7 +43,7 @@ describe('Users API', () => {
 
         it('should reject password shorter than 8 characters', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'test@example.com',
                     password: 'short',
@@ -55,7 +55,7 @@ describe('Users API', () => {
 
         it('should accept password with exactly 8 characters', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'test8@example.com',
                     password: '12345678',
@@ -72,11 +72,11 @@ describe('Users API', () => {
             };
 
             // Create first user
-            await request(app).post('/users').send(userData).expect(201);
+            await request(app).post('/v1/users').send(userData).expect(201);
 
             // Try to create duplicate
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send(userData)
                 .expect(409);
 
@@ -85,7 +85,7 @@ describe('Users API', () => {
 
         it('should reject missing email', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     password: 'password123',
                 })
@@ -96,7 +96,7 @@ describe('Users API', () => {
 
         it('should reject missing password', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'test@example.com',
                 })
@@ -107,7 +107,7 @@ describe('Users API', () => {
 
         it('should reject empty email', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: '',
                     password: 'password123',
@@ -119,7 +119,7 @@ describe('Users API', () => {
 
         it('should reject empty password', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'test@example.com',
                     password: '',
@@ -139,7 +139,7 @@ describe('Users API', () => {
 
             for (const email of validEmails) {
                 const response = await request(app)
-                    .post('/users')
+                    .post('/v1/users')
                     .send({
                         email,
                         password: 'password123',
@@ -162,7 +162,7 @@ describe('Users API', () => {
 
             for (const email of invalidEmails) {
                 const response = await request(app)
-                    .post('/users')
+                    .post('/v1/users')
                     .send({
                         email,
                         password: 'password123',
@@ -176,7 +176,7 @@ describe('Users API', () => {
         it('should accept very long passwords', async () => {
             const longPassword = 'a'.repeat(100);
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'longpass@example.com',
                     password: longPassword,
@@ -188,7 +188,7 @@ describe('Users API', () => {
 
         it('should accept passwords with special characters', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'special@example.com',
                     password: '!@#$%^&*()_+-=[]{}|;:,.<>?',
@@ -200,7 +200,7 @@ describe('Users API', () => {
 
         it('should return validation details in error response', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'invalid-email',
                     password: 'short',
@@ -227,7 +227,7 @@ describe('Users API', () => {
 
             for (const body of invalidTypes) {
                 const response = await request(app)
-                    .post('/users')
+                    .post('/v1/users')
                     .send(body)
                     .expect(400);
 
@@ -237,7 +237,7 @@ describe('Users API', () => {
 
         it('should reject null values', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: null,
                     password: 'password123',
@@ -251,7 +251,7 @@ describe('Users API', () => {
             const longEmail = 'a'.repeat(100) + '@example.com';
 
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: longEmail,
                     password: 'password123',
@@ -268,7 +268,7 @@ describe('Users API', () => {
 
         it('should return consistent user schema on creation', async () => {
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'schema-test@example.com',
                     password: 'password123',
@@ -289,7 +289,7 @@ describe('Users API', () => {
 
         it('should generate unique IDs for different users', async () => {
             const user1Response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'user1@example.com',
                     password: 'password123',
@@ -297,7 +297,7 @@ describe('Users API', () => {
                 .expect(201);
 
             const user2Response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'user2@example.com',
                     password: 'password123',
@@ -311,7 +311,7 @@ describe('Users API', () => {
             const beforeCreation = new Date();
 
             const response = await request(app)
-                .post('/users')
+                .post('/v1/users')
                 .send({
                     email: 'timestamp@example.com',
                     password: 'password123',

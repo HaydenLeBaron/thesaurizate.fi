@@ -13,7 +13,7 @@ describe('Transactions API', () => {
 
     // Create test users
     const user1Response = await request(app)
-      .post('/users')
+      .post('/v1/users')
       .send({
         email: 'account1@example.com',
         password: 'password123',
@@ -21,7 +21,7 @@ describe('Transactions API', () => {
     const userId1 = user1Response.body.id;
 
     const user2Response = await request(app)
-      .post('/users')
+      .post('/v1/users')
       .send({
         email: 'account2@example.com',
         password: 'password123',
@@ -30,14 +30,14 @@ describe('Transactions API', () => {
 
     // Create test accounts
     const account1Response = await request(app)
-      .post('/accounts')
+      .post('/v1/accounts')
       .send({
         user_id: userId1,
       });
     account1Id = account1Response.body.id;
 
     const account2Response = await request(app)
-      .post('/accounts')
+      .post('/v1/accounts')
       .send({
         user_id: userId2,
       });
@@ -48,7 +48,7 @@ describe('Transactions API', () => {
     it('should deposit money into account account', async () => {
       const idempotencyKey = randomUUID();
       const response = await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: idempotencyKey,
           amount: 10000, // 100.00 in cents
@@ -69,7 +69,7 @@ describe('Transactions API', () => {
       const idempotencyKey = randomUUID();
       // First deposit
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: idempotencyKey,
           amount: 10000, // 100.00 in cents
@@ -78,7 +78,7 @@ describe('Transactions API', () => {
 
       // Duplicate deposit with same idempotency key
       const response = await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: idempotencyKey,
           amount: 10000,
@@ -91,7 +91,7 @@ describe('Transactions API', () => {
 
     it('should reject invalid amount', async () => {
       const response = await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: -5000, // -50.00 in cents
@@ -103,7 +103,7 @@ describe('Transactions API', () => {
 
     it('should reject missing idempotency_key', async () => {
       const response = await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           amount: 10000,
         })
@@ -115,7 +115,7 @@ describe('Transactions API', () => {
     it('should reject non-existent account for deposit', async () => {
       const fakeAccountId = randomUUID();
       const response = await request(app)
-        .post(`/accounts/${fakeAccountId}/deposit`)
+        .post(`/v1/accounts/${fakeAccountId}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
@@ -130,7 +130,7 @@ describe('Transactions API', () => {
     beforeEach(async () => {
       // Deposit money into account1's account
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000, // 500.00 in cents
@@ -140,7 +140,7 @@ describe('Transactions API', () => {
     it('should create a transaction between accounts', async () => {
       const idempotencyKey = randomUUID();
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: idempotencyKey,
           source_account_id: account1Id,
@@ -161,7 +161,7 @@ describe('Transactions API', () => {
 
     it('should reject transaction with insufficient funds', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -175,7 +175,7 @@ describe('Transactions API', () => {
 
     it('should reject transaction with invalid amount', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -189,7 +189,7 @@ describe('Transactions API', () => {
 
     it('should reject transaction to same account', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -205,7 +205,7 @@ describe('Transactions API', () => {
       const idempotencyKey = randomUUID();
       // First transaction
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: idempotencyKey,
           source_account_id: account1Id,
@@ -216,7 +216,7 @@ describe('Transactions API', () => {
 
       // Duplicate transaction
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: idempotencyKey,
           source_account_id: account1Id,
@@ -231,7 +231,7 @@ describe('Transactions API', () => {
 
     it('should reject missing required fields', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -243,7 +243,7 @@ describe('Transactions API', () => {
 
     it('should handle invalid date format in balance query', async () => {
       const response = await request(app)
-        .get(`/accounts/${account1Id}/balance?date=invalid-date`)
+        .get(`/v1/accounts/${account1Id}/balance?date=invalid-date`)
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -252,7 +252,7 @@ describe('Transactions API', () => {
     it('should handle non-existent account for balance', async () => {
       const fakeAccountId = randomUUID();
       const response = await request(app)
-        .get(`/accounts/${fakeAccountId}/balance`)
+        .get(`/v1/accounts/${fakeAccountId}/balance`)
         .expect(200);
 
       // Should return 0 balance for non-existent account
@@ -262,7 +262,7 @@ describe('Transactions API', () => {
     it('should handle non-existent source account for transaction', async () => {
       const fakeAccountId = randomUUID();
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: fakeAccountId,
@@ -280,14 +280,14 @@ describe('Transactions API', () => {
     beforeEach(async () => {
       // Setup initial balances
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 100000, // 1000.00 in cents
         });
 
       await request(app)
-        .post(`/accounts/${account2Id}/deposit`)
+        .post(`/v1/accounts/${account2Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000, // 500.00 in cents
@@ -296,7 +296,7 @@ describe('Transactions API', () => {
 
     it('should get current balance for a account', async () => {
       const response = await request(app)
-        .get(`/accounts/${account1Id}/balance`)
+        .get(`/v1/accounts/${account1Id}/balance`)
         .expect(200);
 
       expect(response.body).toMatchObject({
@@ -308,7 +308,7 @@ describe('Transactions API', () => {
     it('should reflect balance changes after transaction', async () => {
       // Create transaction
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -318,13 +318,13 @@ describe('Transactions API', () => {
 
       // Check source account balance
       const response1 = await request(app)
-        .get(`/accounts/${account1Id}/balance`)
+        .get(`/v1/accounts/${account1Id}/balance`)
         .expect(200);
       expect(response1.body.balance).toBe(80000); // 800.00 in cents
 
       // Check destination account balance
       const response2 = await request(app)
-        .get(`/accounts/${account2Id}/balance`)
+        .get(`/v1/accounts/${account2Id}/balance`)
         .expect(200);
       expect(response2.body.balance).toBe(70000); // 700.00 in cents
     });
@@ -332,7 +332,7 @@ describe('Transactions API', () => {
     it('should return zero balance for account with no transactions', async () => {
       // Create a new user and account
       const user3Response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'account3@example.com',
           password: 'password123',
@@ -340,13 +340,13 @@ describe('Transactions API', () => {
       const userId3 = user3Response.body.id;
 
       const account3Response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userId3,
         });
 
       const response = await request(app)
-        .get(`/accounts/${account3Response.body.id}/balance`)
+        .get(`/v1/accounts/${account3Response.body.id}/balance`)
         .expect(200);
 
       expect(response.body.balance).toBe(0);
@@ -357,7 +357,7 @@ describe('Transactions API', () => {
       const now = new Date().toISOString();
 
       const response = await request(app)
-        .get(`/accounts/${account1Id}/balance?date=${now}`)
+        .get(`/v1/accounts/${account1Id}/balance?date=${now}`)
         .expect(200);
 
       expect(response.body).toMatchObject({
@@ -368,7 +368,7 @@ describe('Transactions API', () => {
 
     it('should reject invalid account id', async () => {
       const response = await request(app)
-        .get('/accounts/invalid/balance')
+        .get('/v1/accounts/invalid/balance')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -379,14 +379,14 @@ describe('Transactions API', () => {
     beforeEach(async () => {
       // Setup transactions
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 100000, // 1000.00 in cents
         });
 
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -395,7 +395,7 @@ describe('Transactions API', () => {
         });
 
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -406,7 +406,7 @@ describe('Transactions API', () => {
 
     it('should get transaction history for a account', async () => {
       const response = await request(app)
-        .get(`/accounts/${account1Id}/transactions`)
+        .get(`/v1/accounts/${account1Id}/transactions`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -422,7 +422,7 @@ describe('Transactions API', () => {
 
     it('should return transactions in descending order by created_at', async () => {
       const response = await request(app)
-        .get(`/accounts/${account1Id}/transactions`)
+        .get(`/v1/accounts/${account1Id}/transactions`)
         .expect(200);
 
       expect(response.body.length).toBeGreaterThan(0);
@@ -438,7 +438,7 @@ describe('Transactions API', () => {
     it('should return empty array for account with no transactions', async () => {
       // Create a new user and account
       const user3Response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'account3@example.com',
           password: 'password123',
@@ -446,13 +446,13 @@ describe('Transactions API', () => {
       const userId3 = user3Response.body.id;
 
       const account3Response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userId3,
         });
 
       const response = await request(app)
-        .get(`/accounts/${account3Response.body.id}/transactions`)
+        .get(`/v1/accounts/${account3Response.body.id}/transactions`)
         .expect(200);
 
       expect(response.body).toEqual([]);
@@ -461,14 +461,14 @@ describe('Transactions API', () => {
     it('should include both sent and received transactions', async () => {
       // Account2 sends money back to account1
       await request(app)
-        .post(`/accounts/${account2Id}/deposit`)
+        .post(`/v1/accounts/${account2Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000, // 500.00 in cents
         });
 
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account2Id,
@@ -477,7 +477,7 @@ describe('Transactions API', () => {
         });
 
       const response = await request(app)
-        .get(`/accounts/${account1Id}/transactions`)
+        .get(`/v1/accounts/${account1Id}/transactions`)
         .expect(200);
 
       // Should have deposit, 2 sent, and 1 received
@@ -486,7 +486,7 @@ describe('Transactions API', () => {
 
     it('should reject invalid account id', async () => {
       const response = await request(app)
-        .get('/accounts/invalid/transactions')
+        .get('/v1/accounts/invalid/transactions')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
