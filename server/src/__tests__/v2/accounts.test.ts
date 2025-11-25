@@ -211,18 +211,159 @@ describe('V2 Accounts API', () => {
   });
 
   describe('GET /v2/accounts/{accountId}/contact', () => {
-    it('should get account contact information', async () => {
+    beforeEach(async () => {
+      // Update account with contact information
+      await pool.query(`
+        UPDATE accounts
+        SET 
+          primary_account_holder_id = $1,
+          contact_email = 'account1@example.com',
+          address_type = 'HOME',
+          address_primary = true,
+          address_line1 = '123 Main St',
+          address_line2 = 'Apt 4B',
+          address_city = 'New York',
+          address_region = 'NY',
+          address_postal_code = '10001',
+          address_country = 'US',
+          telephone_type = 'CELL',
+          telephone_country = '1',
+          telephone_number = '5551234567',
+          telephone_network = 'CELLULAR',
+          telephone_primary = true
+        WHERE id = $2
+      `, [userId1, account1Id]);
+
+      // Update user with name information
+      await pool.query(`
+        UPDATE users
+        SET 
+          name_first = 'John',
+          name_middle = 'Michael',
+          name_last = 'Doe',
+          name_suffix = 'Jr.',
+          name_prefix = 'Mr.'
+        WHERE id = $1
+      `, [userId1]);
+    });
+
+    it('should get account contact information with all fields populated', async () => {
       const response = await request(app)
         .get(`/v2/accounts/${account1Id}/contact`)
         .expect(200);
 
       expect(response.body).toMatchObject({
         accountId: account1Id,
-        contact: {
-          email: 'account1@example.com',
-          userId: userId1,
-        },
+        holders: expect.any(Array),
+        emails: expect.any(Array),
+        addresses: expect.any(Array),
+        telephones: expect.any(Array),
       });
+
+      // Verify holders array structure
+      expect(response.body.holders.length).toBeGreaterThanOrEqual(1);
+      expect(response.body.holders.length).toBeLessThanOrEqual(2);
+      expect(response.body.holders[0]).toMatchObject({
+        relationship: 'PRIMARY',
+        first: 'John',
+        middle: 'Michael',
+        last: 'Doe',
+        suffix: 'Jr.',
+        prefix: 'Mr.',
+      });
+
+      // Verify emails array structure
+      expect(response.body.emails.length).toBe(1);
+      expect(response.body.emails[0]).toBe('account1@example.com');
+
+      // Verify addresses array structure
+      expect(response.body.addresses.length).toBe(1);
+      expect(response.body.addresses[0]).toMatchObject({
+        type: 'HOME',
+        primary: true,
+        line1: '123 Main St',
+        line2: 'Apt 4B',
+        city: 'New York',
+        region: 'NY',
+        postalCode: '10001',
+        country: 'US',
+      });
+
+      // Verify telephones array structure
+      expect(response.body.telephones.length).toBe(1);
+      expect(response.body.telephones[0]).toMatchObject({
+        type: 'CELL',
+        country: '1',
+        number: '5551234567',
+        network: 'CELLULAR',
+        primary: true,
+      });
+    });
+
+    it('should handle nullable fields correctly', async () => {
+      // Update account with minimal data (required fields only)
+      await pool.query(`
+        UPDATE accounts
+        SET 
+          address_line2 = NULL,
+          address_line3 = NULL,
+          address_region = NULL,
+          address_postal_code = NULL,
+          telephone_network = NULL
+        WHERE id = $1
+      `, [account1Id]);
+
+      // Update user with minimal name data
+      await pool.query(`
+        UPDATE users
+        SET 
+          name_middle = NULL,
+          name_suffix = NULL,
+          name_prefix = NULL
+        WHERE id = $1
+      `, [userId1]);
+
+      const response = await request(app)
+        .get(`/v2/accounts/${account1Id}/contact`)
+        .expect(200);
+
+      expect(response.body.holders[0].middle).toBeNull();
+      expect(response.body.holders[0].suffix).toBeNull();
+      expect(response.body.holders[0].prefix).toBeNull();
+      expect(response.body.addresses[0].line2).toBeNull();
+      expect(response.body.addresses[0].line3).toBeNull();
+      expect(response.body.addresses[0].region).toBeNull();
+      expect(response.body.addresses[0].postalCode).toBeNull();
+      expect(response.body.telephones[0].network).toBeNull();
+    });
+
+    it('should return account with secondary holder when present', async () => {
+      // Add secondary account holder
+      await pool.query(`
+        UPDATE accounts
+        SET secondary_account_holder_id = $1
+        WHERE id = $2
+      `, [userId2, account1Id]);
+
+      // Update second user with name information
+      await pool.query(`
+        UPDATE users
+        SET 
+          name_first = 'Jane',
+          name_last = 'Doe',
+          name_prefix = 'Mrs.'
+        WHERE id = $1
+      `, [userId2]);
+
+      const response = await request(app)
+        .get(`/v2/accounts/${account1Id}/contact`)
+        .expect(200);
+
+      expect(response.body.holders.length).toBe(2);
+      expect(response.body.holders[0].relationship).toBe('PRIMARY');
+      expect(response.body.holders[1].relationship).toBe('SECONDARY');
+      expect(response.body.holders[1].first).toBe('Jane');
+      expect(response.body.holders[1].last).toBe('Doe');
     });
 
     it('should return 404 for non-existent account', async () => {
@@ -240,6 +381,54 @@ describe('V2 Accounts API', () => {
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
+    });
+
+    it('should handle accounts with minimal data (required fields only)', async () => {
+      // Create a new account with minimal contact data
+      const user3Response = await request(app)
+        .post('/users')
+        .send({
+          email: 'minimal@example.com',
+          password: 'password123',
+        });
+      const userId3 = user3Response.body.id;
+
+      await pool.query(`
+        UPDATE users
+        SET name_first = 'Min', name_last = 'User'
+        WHERE id = $1
+      `, [userId3]);
+
+      const account3Response = await request(app)
+        .post('/accounts')
+        .send({
+          user_id: userId3,
+        });
+      const account3Id = account3Response.body.id;
+
+      await pool.query(`
+        UPDATE accounts
+        SET 
+          primary_account_holder_id = $1,
+          contact_email = 'minimal@example.com',
+          address_type = 'HOME',
+          address_line1 = '456 Simple St',
+          address_city = 'Boston',
+          address_country = 'US',
+          telephone_type = 'HOME',
+          telephone_country = '1',
+          telephone_number = '5559999999'
+        WHERE id = $2
+      `, [userId3, account3Id]);
+
+      const response = await request(app)
+        .get(`/v2/accounts/${account3Id}/contact`)
+        .expect(200);
+
+      expect(response.body.holders.length).toBeGreaterThanOrEqual(1);
+      expect(response.body.emails.length).toBe(1);
+      expect(response.body.addresses.length).toBe(1);
+      expect(response.body.telephones.length).toBe(1);
     });
   });
 

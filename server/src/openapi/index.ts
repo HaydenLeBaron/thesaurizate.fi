@@ -333,7 +333,7 @@ export const openApiSpec = createDocument({
             },
           },
           '404': {
-            description: 'Account or user not found',
+            description: 'Account not found or contact information incomplete',
           },
           '400': {
             description: 'Bad request (validation error)',
