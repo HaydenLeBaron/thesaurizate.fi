@@ -6,6 +6,8 @@ import swaggerUi from 'swagger-ui-express';
 import transactionsRouter from './routes/transactions';
 import accountsRouter from './routes/accounts';
 import usersRouter from './routes/users';
+import v2AccountsRouter from './routes/v2/accounts';
+import v2TransactionsRouter from './routes/v2/transactions';
 import { openApiSpec } from './openapi';
 
 const app = express();
@@ -17,10 +19,14 @@ app.use(express.json());
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
-// Routes
+// V1 Routes
 app.use('/', transactionsRouter);
 app.use('/', accountsRouter);
 app.use('/', usersRouter);
+
+// V2 Routes
+app.use('/v2', v2AccountsRouter);
+app.use('/v2', v2TransactionsRouter);
 
 // OpenAPI spec endpoint
 app.get('/openapi.json', (req, res) => {
