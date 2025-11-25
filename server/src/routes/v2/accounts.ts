@@ -27,11 +27,12 @@ router.get('/accounts', async (req, res) => {
     }).run(pool);
 
     // Transform to V2 response format (camelCase)
+    // Zapatos returns timestamps as ISO string literals, not Date objects
     const response = accounts.map(account => ({
       accountId: account.id,
       userId: account.user_id,
-      createdAt: account.created_at.toISOString(),
-      updatedAt: account.updated_at.toISOString(),
+      createdAt: String(account.created_at),
+      updatedAt: String(account.updated_at),
     }));
 
     res.json(response);
@@ -81,8 +82,8 @@ router.get('/accounts/:accountId', async (req, res) => {
         mortgage: 0, // No mortgage liability for now
       },
       metadata: {
-        createdAt: account.created_at.toISOString(),
-        updatedAt: account.updated_at.toISOString(),
+        createdAt: String(account.created_at),
+        updatedAt: String(account.updated_at),
       },
     };
 

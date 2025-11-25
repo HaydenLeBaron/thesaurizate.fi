@@ -63,13 +63,14 @@ router.get('/accounts/:accountId/transactions', async (req, res) => {
     }
 
     // Transform to V2 response format (camelCase)
+    // Zapatos returns timestamps as ISO string literals, not Date objects
     const response = transactions.map(txn => ({
       transactionId: txn.id,
       idempotencyKey: txn.idempotency_key,
       sourceAccountId: txn.source_account_id,
       destinationAccountId: txn.destination_account_id,
       amount: txn.amount,
-      createdAt: txn.created_at.toISOString(),
+      createdAt: String(txn.created_at),
     }));
 
     res.json(response);
