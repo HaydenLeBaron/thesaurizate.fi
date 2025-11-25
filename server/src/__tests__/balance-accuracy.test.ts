@@ -13,15 +13,15 @@ describe('Balance Calculation Accuracy Tests', () => {
 
     // Create users first
     const users = await Promise.all([
-      request(app).post('/users').send({
+      request(app).post('/v1/users').send({
         email: 'balance1@example.com',
         password: 'password123',
       }),
-      request(app).post('/users').send({
+      request(app).post('/v1/users').send({
         email: 'balance2@example.com',
         password: 'password123',
       }),
-      request(app).post('/users').send({
+      request(app).post('/v1/users').send({
         email: 'balance3@example.com',
         password: 'password123',
       }),
@@ -33,13 +33,13 @@ describe('Balance Calculation Accuracy Tests', () => {
 
     // Then create accounts
     const accounts = await Promise.all([
-      request(app).post('/accounts').send({
+      request(app).post('/v1/accounts').send({
         user_id: userId1,
       }),
-      request(app).post('/accounts').send({
+      request(app).post('/v1/accounts').send({
         user_id: userId2,
       }),
-      request(app).post('/accounts').send({
+      request(app).post('/v1/accounts').send({
         user_id: userId3,
       }),
     ]);
@@ -52,13 +52,13 @@ describe('Balance Calculation Accuracy Tests', () => {
   describe('Simple Balance Calculations', () => {
     it('should calculate correct balance after single deposit', async () => {
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 12345,
         });
 
-      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       expect(balance.body.balance).toBe(12345);
     });
 
@@ -67,27 +67,27 @@ describe('Balance Calculation Accuracy Tests', () => {
 
       for (const amount of deposits) {
         await request(app)
-          .post(`/accounts/${account1Id}/deposit`)
+          .post(`/v1/accounts/${account1Id}/deposit`)
           .send({
             idempotency_key: randomUUID(),
             amount,
           });
       }
 
-      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       expect(balance.body.balance).toBe(11000);
     });
 
     it('should calculate correct balance after deposit and single transfer out', async () => {
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
         });
 
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -95,20 +95,20 @@ describe('Balance Calculation Accuracy Tests', () => {
           amount: 3000,
         });
 
-      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       expect(balance.body.balance).toBe(7000);
     });
 
     it('should calculate correct balance after receiving a transfer', async () => {
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 10000,
         });
 
       await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
@@ -116,7 +116,7 @@ describe('Balance Calculation Accuracy Tests', () => {
           amount: 4000,
         });
 
-      const balance = await request(app).get(`/accounts/${account2Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account2Id}/balance`);
       expect(balance.body.balance).toBe(4000);
     });
   });
@@ -125,28 +125,28 @@ describe('Balance Calculation Accuracy Tests', () => {
     it('should calculate correct balance after many mixed transactions', async () => {
       // Initial deposit
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 100000,
         });
 
       // Multiple outgoing transfers
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
         amount: 10000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account3Id,
         amount: 15000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
@@ -155,13 +155,13 @@ describe('Balance Calculation Accuracy Tests', () => {
 
       // Fund account2 and receive money from account2
       await request(app)
-        .post(`/accounts/${account2Id}/deposit`)
+        .post(`/v1/accounts/${account2Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 50000,
         });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account2Id,
         destination_account_id: account1Id,
@@ -169,14 +169,14 @@ describe('Balance Calculation Accuracy Tests', () => {
       });
 
       // More outgoing
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account3Id,
         amount: 12000,
       });
 
-      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       // 100000 - 10000 - 15000 - 5000 + 8000 - 12000 = 66000
       expect(balance.body.balance).toBe(66000);
     });
@@ -184,36 +184,36 @@ describe('Balance Calculation Accuracy Tests', () => {
     it('should maintain correct balances in circular transfer scenario', async () => {
       // Fund all accounts
       await Promise.all([
-        request(app).post(`/accounts/${account1Id}/deposit`).send({
+        request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount: 30000,
         }),
-        request(app).post(`/accounts/${account2Id}/deposit`).send({
+        request(app).post(`/v1/accounts/${account2Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount: 20000,
         }),
-        request(app).post(`/accounts/${account3Id}/deposit`).send({
+        request(app).post(`/v1/accounts/${account3Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount: 10000,
         }),
       ]);
 
       // Circular transfers
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
         amount: 5000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account2Id,
         destination_account_id: account3Id,
         amount: 7000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account3Id,
         destination_account_id: account1Id,
@@ -221,9 +221,9 @@ describe('Balance Calculation Accuracy Tests', () => {
       });
 
       const balances = await Promise.all([
-        request(app).get(`/accounts/${account1Id}/balance`),
-        request(app).get(`/accounts/${account2Id}/balance`),
-        request(app).get(`/accounts/${account3Id}/balance`),
+        request(app).get(`/v1/accounts/${account1Id}/balance`),
+        request(app).get(`/v1/accounts/${account2Id}/balance`),
+        request(app).get(`/v1/accounts/${account3Id}/balance`),
       ]);
 
       // account1: 30000 - 5000 + 3000 = 28000
@@ -236,7 +236,7 @@ describe('Balance Calculation Accuracy Tests', () => {
 
     it('should calculate balance correctly after 100 small transactions', async () => {
       await request(app)
-        .post(`/accounts/${account1Id}/deposit`)
+        .post(`/v1/accounts/${account1Id}/deposit`)
         .send({
           idempotency_key: randomUUID(),
           amount: 1000000, // 1M cents = $10,000
@@ -245,7 +245,7 @@ describe('Balance Calculation Accuracy Tests', () => {
       // Make 100 small transfers
       const transferAmount = 100;
       for (let i = 0; i < 100; i++) {
-        await request(app).post('/transactions').send({
+        await request(app).post('/v1/transactions').send({
           idempotency_key: randomUUID(),
           source_account_id: account1Id,
           destination_account_id: account2Id,
@@ -253,8 +253,8 @@ describe('Balance Calculation Accuracy Tests', () => {
         });
       }
 
-      const balance1 = await request(app).get(`/accounts/${account1Id}/balance`);
-      const balance2 = await request(app).get(`/accounts/${account2Id}/balance`);
+      const balance1 = await request(app).get(`/v1/accounts/${account1Id}/balance`);
+      const balance2 = await request(app).get(`/v1/accounts/${account2Id}/balance`);
 
       expect(balance1.body.balance).toBe(1000000 - 100 * transferAmount);
       expect(balance2.body.balance).toBe(100 * transferAmount);
@@ -265,31 +265,31 @@ describe('Balance Calculation Accuracy Tests', () => {
     it('should conserve total money in the system across transfers', async () => {
       // Initial deposits
       const initialTotal = 150000;
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 100000,
       });
-      await request(app).post(`/accounts/${account2Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account2Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 50000,
       });
 
       // Perform various transfers
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
         amount: 25000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account2Id,
         destination_account_id: account3Id,
         amount: 30000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account3Id,
@@ -298,9 +298,9 @@ describe('Balance Calculation Accuracy Tests', () => {
 
       // Get all balances
       const balances = await Promise.all([
-        request(app).get(`/accounts/${account1Id}/balance`),
-        request(app).get(`/accounts/${account2Id}/balance`),
-        request(app).get(`/accounts/${account3Id}/balance`),
+        request(app).get(`/v1/accounts/${account1Id}/balance`),
+        request(app).get(`/v1/accounts/${account2Id}/balance`),
+        request(app).get(`/v1/accounts/${account3Id}/balance`),
       ]);
 
       const totalBalance = balances.reduce((sum, b) => sum + b.body.balance, 0);
@@ -313,15 +313,15 @@ describe('Balance Calculation Accuracy Tests', () => {
       const initialTotal = amounts.reduce((a, b) => a + b, 0);
 
       await Promise.all([
-        request(app).post(`/accounts/${account1Id}/deposit`).send({
+        request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount: amounts[0],
         }),
-        request(app).post(`/accounts/${account2Id}/deposit`).send({
+        request(app).post(`/v1/accounts/${account2Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount: amounts[1],
         }),
-        request(app).post(`/accounts/${account3Id}/deposit`).send({
+        request(app).post(`/v1/accounts/${account3Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount: amounts[2],
         }),
@@ -338,7 +338,7 @@ describe('Balance Calculation Accuracy Tests', () => {
       ];
 
       for (const transfer of transfers) {
-        await request(app).post('/transactions').send({
+        await request(app).post('/v1/transactions').send({
           idempotency_key: randomUUID(),
           source_account_id: transfer.from,
           destination_account_id: transfer.to,
@@ -347,9 +347,9 @@ describe('Balance Calculation Accuracy Tests', () => {
       }
 
       const balances = await Promise.all([
-        request(app).get(`/accounts/${account1Id}/balance`),
-        request(app).get(`/accounts/${account2Id}/balance`),
-        request(app).get(`/accounts/${account3Id}/balance`),
+        request(app).get(`/v1/accounts/${account1Id}/balance`),
+        request(app).get(`/v1/accounts/${account2Id}/balance`),
+        request(app).get(`/v1/accounts/${account3Id}/balance`),
       ]);
 
       const totalBalance = balances.reduce((sum, b) => sum + b.body.balance, 0);
@@ -360,7 +360,7 @@ describe('Balance Calculation Accuracy Tests', () => {
   describe('Historical Balance Calculations', () => {
     it('should calculate balance at specific point in time', async () => {
       // Deposit
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 10000,
       });
@@ -371,43 +371,43 @@ describe('Balance Calculation Accuracy Tests', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // More transactions after checkpoint
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 5000,
       });
 
       // Balance at checkpoint should be 10000
       const historicalBalance = await request(app)
-        .get(`/accounts/${account1Id}/balance?date=${checkpointDate}`);
+        .get(`/v1/accounts/${account1Id}/balance?date=${checkpointDate}`);
       expect(historicalBalance.body.balance).toBe(10000);
 
       // Current balance should be 15000
       const currentBalance = await request(app)
-        .get(`/accounts/${account1Id}/balance`);
+        .get(`/v1/accounts/${account1Id}/balance`);
       expect(currentBalance.body.balance).toBe(15000);
     });
 
     it('should show zero balance before first transaction', async () => {
       const pastDate = new Date('2020-01-01T00:00:00Z').toISOString();
 
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 10000,
       });
 
       const balance = await request(app)
-        .get(`/accounts/${account1Id}/balance?date=${pastDate}`);
+        .get(`/v1/accounts/${account1Id}/balance?date=${pastDate}`);
       expect(balance.body.balance).toBe(0);
     });
 
     it('should calculate complex historical balance correctly', async () => {
       // Series of transactions
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 50000,
       });
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
@@ -419,7 +419,7 @@ describe('Balance Calculation Accuracy Tests', () => {
       const checkpoint1 = new Date().toISOString();
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
@@ -431,21 +431,21 @@ describe('Balance Calculation Accuracy Tests', () => {
       const checkpoint2 = new Date().toISOString();
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 20000,
       });
 
       const balance1 = await request(app)
-        .get(`/accounts/${account1Id}/balance?date=${checkpoint1}`);
+        .get(`/v1/accounts/${account1Id}/balance?date=${checkpoint1}`);
       expect(balance1.body.balance).toBe(40000);
 
       const balance2 = await request(app)
-        .get(`/accounts/${account1Id}/balance?date=${checkpoint2}`);
+        .get(`/v1/accounts/${account1Id}/balance?date=${checkpoint2}`);
       expect(balance2.body.balance).toBe(35000);
 
       const currentBalance = await request(app)
-        .get(`/accounts/${account1Id}/balance`);
+        .get(`/v1/accounts/${account1Id}/balance`);
       expect(currentBalance.body.balance).toBe(55000);
     });
   });
@@ -456,13 +456,13 @@ describe('Balance Calculation Accuracy Tests', () => {
       const primeAmounts = [7, 13, 17, 23, 29, 31, 37, 41, 43, 47];
 
       for (const amount of primeAmounts) {
-        await request(app).post(`/accounts/${account1Id}/deposit`).send({
+        await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
           idempotency_key: randomUUID(),
           amount,
         });
       }
 
-      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       const expectedSum = primeAmounts.reduce((a, b) => a + b, 0);
       expect(balance.body.balance).toBe(expectedSum);
     });
@@ -471,60 +471,60 @@ describe('Balance Calculation Accuracy Tests', () => {
       const largeAmount1 = 999999999;
       const largeAmount2 = 888888888;
 
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: largeAmount1,
       });
 
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: largeAmount2,
       });
 
-      const balance = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balance = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       expect(balance.body.balance).toBe(largeAmount1 + largeAmount2);
     });
   });
 
   describe('Balance After Failed Transactions', () => {
     it('should not change balance after failed transaction (insufficient funds)', async () => {
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 5000,
       });
 
-      const balanceBefore = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balanceBefore = await request(app).get(`/v1/accounts/${account1Id}/balance`);
 
       // Try to send more than available
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
         amount: 10000,
       }).expect(400);
 
-      const balanceAfter = await request(app).get(`/accounts/${account1Id}/balance`);
+      const balanceAfter = await request(app).get(`/v1/accounts/${account1Id}/balance`);
       expect(balanceAfter.body.balance).toBe(balanceBefore.body.balance);
       expect(balanceAfter.body.balance).toBe(5000);
     });
 
     it('should not affect recipient balance after failed transaction', async () => {
-      await request(app).post(`/accounts/${account1Id}/deposit`).send({
+      await request(app).post(`/v1/accounts/${account1Id}/deposit`).send({
         idempotency_key: randomUUID(),
         amount: 1000,
       });
 
-      const balance2Before = await request(app).get(`/accounts/${account2Id}/balance`);
+      const balance2Before = await request(app).get(`/v1/accounts/${account2Id}/balance`);
 
       // Try to send more than available
-      await request(app).post('/transactions').send({
+      await request(app).post('/v1/transactions').send({
         idempotency_key: randomUUID(),
         source_account_id: account1Id,
         destination_account_id: account2Id,
         amount: 5000,
       }).expect(400);
 
-      const balance2After = await request(app).get(`/accounts/${account2Id}/balance`);
+      const balance2After = await request(app).get(`/v1/accounts/${account2Id}/balance`);
       expect(balance2After.body.balance).toBe(balance2Before.body.balance);
       expect(balance2After.body.balance).toBe(0);
     });

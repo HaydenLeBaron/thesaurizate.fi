@@ -11,7 +11,7 @@ describe('Error Handling Tests', () => {
     await pool.query('TRUNCATE TABLE transactions, accounts, users RESTART IDENTITY CASCADE');
 
     const userResponse = await request(app)
-      .post('/users')
+      .post('/v1/users')
       .send({
         email: 'error@example.com',
         password: 'password123',
@@ -19,7 +19,7 @@ describe('Error Handling Tests', () => {
     const userId = userResponse.body.id;
 
     const user2Response = await request(app)
-      .post('/users')
+      .post('/v1/users')
       .send({
         email: 'error2@example.com',
         password: 'password123',
@@ -27,14 +27,14 @@ describe('Error Handling Tests', () => {
     const userId2 = user2Response.body.id;
 
     const accountResponse = await request(app)
-      .post('/accounts')
+      .post('/v1/accounts')
       .send({
         user_id: userId,
       });
     accountId = accountResponse.body.id;
 
     const account2Response = await request(app)
-      .post('/accounts')
+      .post('/v1/accounts')
       .send({
         user_id: userId2,
       });
@@ -44,7 +44,7 @@ describe('Error Handling Tests', () => {
   describe('Database Error Handling', () => {
     it('should handle duplicate email with 409 conflict', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'error@example.com', // Duplicate
           password: 'password123',
@@ -72,7 +72,7 @@ describe('Error Handling Tests', () => {
       const fakeAccountId = randomUUID();
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: fakeAccountId,
@@ -96,7 +96,7 @@ describe('Error Handling Tests', () => {
       const fakeAccountId = randomUUID();
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -119,7 +119,7 @@ describe('Error Handling Tests', () => {
         });
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -140,7 +140,7 @@ describe('Error Handling Tests', () => {
         });
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -161,7 +161,7 @@ describe('Error Handling Tests', () => {
         });
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -185,7 +185,7 @@ describe('Error Handling Tests', () => {
         });
 
       const response = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -201,7 +201,7 @@ describe('Error Handling Tests', () => {
   describe('Input Validation Error Messages', () => {
     it('should provide clear error for invalid email', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: 'not-an-email',
           password: 'password123',
@@ -214,7 +214,7 @@ describe('Error Handling Tests', () => {
 
     it('should provide clear error for short password', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: 'test@example.com',
           password: '1234567', // 7 chars
@@ -227,7 +227,7 @@ describe('Error Handling Tests', () => {
 
     it('should provide clear error for missing fields', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: 'test@example.com',
         })
@@ -239,7 +239,7 @@ describe('Error Handling Tests', () => {
 
     it('should provide error details for multiple validation failures', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: 'invalid',
           password: 'short',
@@ -269,7 +269,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle GET to transaction creation endpoint (wrong method)', async () => {
       const response = await request(app)
-        .get('/transactions')
+        .get('/v1/transactions')
         .expect(404);
     });
   });
@@ -287,7 +287,7 @@ describe('Error Handling Tests', () => {
 
       // First transaction
       const response1 = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: idempotencyKey,
           source_account_id: accountId,
@@ -298,7 +298,7 @@ describe('Error Handling Tests', () => {
 
       // Duplicate transaction
       const response2 = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: idempotencyKey,
           source_account_id: accountId,
@@ -346,7 +346,7 @@ describe('Error Handling Tests', () => {
         });
 
       const response1 = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -356,7 +356,7 @@ describe('Error Handling Tests', () => {
         .expect(201);
 
       const response2 = await request(app)
-        .post('/transactions')
+        .post('/v1/transactions')
         .send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
@@ -377,7 +377,7 @@ describe('Error Handling Tests', () => {
       const longEmail = 'a'.repeat(100) + '@example.com';
 
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: longEmail,
           password: 'password123',
@@ -395,7 +395,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle Unicode in email', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'test@例え.jp',
           password: 'password123',
@@ -412,7 +412,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle special characters in password', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'special@example.com',
           password: '!@#$%^&*()_+-=[]{}|;:,.<>?',
@@ -424,7 +424,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle null values properly', async () => {
       const response = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: null,
           password: 'password123',
@@ -446,7 +446,7 @@ describe('Error Handling Tests', () => {
 
     it('should handle invalid account ID in transaction history', async () => {
       const response = await request(app)
-        .get('/accounts/invalid-id/transactions')
+        .get('/v1/accounts/invalid-id/transactions')
         .expect(400);
 
       expect(response.body.error).toBe('Validation error');
@@ -492,9 +492,9 @@ describe('Error Handling Tests', () => {
   describe('Error Response Consistency', () => {
     it('should always include error field in error responses', async () => {
       const errorEndpoints = [
-        { method: 'post', url: '/accounts', body: {} },
-        { method: 'post', url: '/transactions', body: {} },
-        { method: 'get', url: '/accounts/invalid/balance', body: undefined },
+        { method: 'post', url: '/v1/accounts', body: {} },
+        { method: 'post', url: '/v1/transactions', body: {} },
+        { method: 'get', url: '/v1/accounts/invalid/balance', body: undefined },
       ];
 
       for (const endpoint of errorEndpoints) {
@@ -513,7 +513,7 @@ describe('Error Handling Tests', () => {
 
     it('should include details for validation errors', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: 'invalid',
           password: 'short',
@@ -527,7 +527,7 @@ describe('Error Handling Tests', () => {
 
     it('should not leak sensitive information in error messages', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           email: 'test@example.com',
           password: 'short',
@@ -551,13 +551,13 @@ describe('Error Handling Tests', () => {
 
       // Try to spend more than available concurrently
       const transfers = [
-        request(app).post('/transactions').send({
+        request(app).post('/v1/transactions').send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
           destination_account_id: account2Id,
           amount: 8000,
         }),
-        request(app).post('/transactions').send({
+        request(app).post('/v1/transactions').send({
           idempotency_key: randomUUID(),
           source_account_id: accountId,
           destination_account_id: account2Id,

@@ -12,7 +12,7 @@ describe('Accounts API', () => {
     it('should create a new account successfully', async () => {
       // First create a user
       const userResponse = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'test@example.com',
           password: 'password123',
@@ -23,7 +23,7 @@ describe('Accounts API', () => {
 
       // Then create an account for that user
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userId,
         })
@@ -38,7 +38,7 @@ describe('Accounts API', () => {
 
     it('should reject missing user_id', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({})
         .expect(400);
 
@@ -47,7 +47,7 @@ describe('Accounts API', () => {
 
     it('should reject invalid user_id', async () => {
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: 'not-a-uuid',
         })
@@ -59,7 +59,7 @@ describe('Accounts API', () => {
     it('should reject non-existent user_id', async () => {
       const fakeUserId = '123e4567-e89b-12d3-a456-426614174000';
       const response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: fakeUserId,
         })
@@ -71,7 +71,7 @@ describe('Accounts API', () => {
     it('should allow creating multiple accounts for same user', async () => {
       // First create a user
       const userResponse = await request(app)
-        .post('/users')
+        .post('/v1/users')
         .send({
           email: 'multiaccount@example.com',
           password: 'password123',
@@ -82,7 +82,7 @@ describe('Accounts API', () => {
 
       // Create first account
       const account1Response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userId,
         })
@@ -90,7 +90,7 @@ describe('Accounts API', () => {
 
       // Create second account for same user
       const account2Response = await request(app)
-        .post('/accounts')
+        .post('/v1/accounts')
         .send({
           user_id: userId,
         })
